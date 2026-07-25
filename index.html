@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ТІЗЕ — программа для колена</title>
+<style>
+  :root{
+    --bg:#0e0e10;
+    --bg2:#161618;
+    --card:#1c1c1f;
+    --card2:#232326;
+    --accent:#E05C1A;
+    --accent-dim:#7a3410;
+    --text:#f2f0ee;
+    --muted:#9b9894;
+    --line:#2c2c2f;
+    --good:#3ba55d;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex;
+    justify-content:center;
+  }
+  #app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    background:var(--bg);
+    position:relative;
+    display:flex;
+    flex-direction:column;
+  }
+  .screen{display:none; flex:1; flex-direction:column; padding-bottom:76px;}
+  .screen.active{display:flex;}
+
+  /* ---------- Welcome ---------- */
+  #screen-welcome{padding:32px 24px; justify-content:center; align-items:center; text-align:center; min-height:100vh;}
+  #screen-welcome .logo{
+    font-size:44px; font-weight:800; letter-spacing:2px; color:var(--accent); margin-bottom:6px;
+  }
+  #screen-welcome .logo-sub{color:var(--muted); font-size:13px; margin-bottom:28px;}
+  #screen-welcome p{line-height:1.6; font-size:15px; color:#d8d5d1; text-align:left; white-space:pre-line;}
+  #screen-welcome .phases{margin:20px 0; text-align:left; width:100%;}
+  #screen-welcome .phase-row{
+    display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); align-items:baseline;
+  }
+  #screen-welcome .phase-row:last-child{border-bottom:none;}
+  #screen-welcome .phase-num{color:var(--accent); font-weight:700; font-size:13px; min-width:64px;}
+  #screen-welcome .phase-txt{font-size:13.5px; color:#cfccc8;}
+  #start-btn{
+    margin-top:24px; width:100%; padding:16px; font-size:16px; font-weight:700;
+    background:var(--accent); color:#fff; border:none; border-radius:14px; cursor:pointer;
+  }
+  #start-btn:active{opacity:.85;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:5;
+    background:rgba(14,14,16,.92); backdrop-filter:blur(6px);
+    padding:16px 18px 12px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:10px;
+  }
+  .topbar .back-btn{
+    background:none; border:none; color:var(--accent); font-size:20px; cursor:pointer; padding:0 4px 0 0;
+  }
+  .topbar h1{font-size:17px; margin:0; font-weight:700; flex:1;}
+  .topbar .sub{font-size:12px; color:var(--muted);}
+
+  /* ---------- Program screen: week tabs + day grid ---------- */
+  .week-tabs{display:flex; gap:8px; padding:14px 18px 4px;}
+  .week-tab{
+    flex:1; padding:10px 0; text-align:center; border-radius:10px; font-size:13px; font-weight:600;
+    background:var(--card); color:var(--muted); cursor:pointer; border:1px solid var(--line);
+  }
+  .week-tab.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+
+  .day-grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:16px 18px 10px;
+  }
+  .day-cell{
+    aspect-ratio:1; background:var(--card); border:1px solid var(--line); border-radius:12px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; position:relative;
+  }
+  .day-cell .n{font-size:16px; font-weight:700;}
+  .day-cell .t{font-size:9px; color:var(--muted); margin-top:2px; text-align:center; padding:0 3px; line-height:1.2;}
+  .day-cell.done{border-color:var(--good);}
+  .day-cell.done::after{
+    content:"✓"; position:absolute; top:4px; right:6px; color:var(--good); font-size:11px; font-weight:800;
+  }
+  .day-cell.current{box-shadow:0 0 0 2px var(--accent) inset;}
+
+  .week-label{padding:6px 18px 2px; font-size:12px; color:var(--muted); letter-spacing:.5px;}
+
+  /* ---------- Day detail ---------- */
+  .day-nav{
+    display:flex; align-items:center; justify-content:space-between; padding:14px 18px 6px;
+  }
+  .day-nav button{
+    background:var(--card); border:1px solid var(--line); color:var(--text);
+    border-radius:10px; padding:8px 14px; font-size:14px; cursor:pointer;
+  }
+  .day-nav button:disabled{opacity:.3;}
+  .day-nav .day-title{font-weight:700; font-size:15px; text-align:center;}
+  .day-nav .day-title small{display:block; font-weight:400; color:var(--muted); font-size:11px; margin-top:2px;}
+
+  .progress-wrap{padding:6px 18px 4px;}
+  .progress-bar-bg{height:8px; background:var(--card2); border-radius:6px; overflow:hidden;}
+  .progress-bar-fill{height:100%; background:var(--accent); width:0%; transition:width .25s;}
+  .progress-label{font-size:11px; color:var(--muted); margin-top:5px; text-align:right;}
+
+  .tip-box{
+    margin:12px 18px; padding:12px 14px; background:linear-gradient(135deg,#2a1a10,#1c1c1f);
+    border:1px solid var(--accent-dim); border-radius:12px; font-size:13px; line-height:1.5; color:#f0d9c9;
+  }
+
+  .ex-list{padding:4px 18px 20px; display:flex; flex-direction:column; gap:10px;}
+  .ex-row{
+    background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 12px;
+    display:flex; align-items:flex-start; gap:10px;
+  }
+  .ex-row.checked{border-color:var(--good); background:#152018;}
+  .ex-check{
+    width:24px; height:24px; border-radius:7px; border:2px solid var(--muted); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; margin-top:1px; background:transparent;
+  }
+  .ex-row.checked .ex-check{background:var(--good); border-color:var(--good); color:#fff; font-size:14px; font-weight:800;}
+  .ex-body{flex:1; min-width:0;}
+  .ex-name{font-size:14.5px; font-weight:700; cursor:pointer;}
+  .ex-row.checked .ex-name{color:#b9d9c4; text-decoration:line-through; text-decoration-color:#4a7a5c;}
+  .ex-meta{font-size:12.5px; color:var(--muted); margin-top:3px; line-height:1.4;}
+  .ex-actions{display:flex; gap:8px; margin-top:8px;}
+  .ex-actions button{
+    font-size:11.5px; padding:6px 10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card2); color:var(--text); cursor:pointer;
+  }
+  .ex-actions button.timer-btn{color:var(--accent); border-color:var(--accent-dim);}
+
+  /* ---------- About screen ---------- */
+  .about-list{padding:12px 18px 20px; display:flex; flex-direction:column; gap:10px;}
+  .about-card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px;}
+  .about-card h3{margin:0 0 8px; font-size:15px;}
+  .about-card .label{font-size:11px; color:var(--accent); font-weight:700; letter-spacing:.4px; margin:10px 0 3px;}
+  .about-card .label:first-of-type{margin-top:2px;}
+  .about-card p{margin:0; font-size:13px; line-height:1.5; color:#cfccc8;}
+  .video-btn{
+    margin-top:12px; width:100%; padding:10px; border-radius:9px; border:1px dashed var(--accent-dim);
+    background:none; color:var(--accent); font-size:13px; font-weight:600; cursor:pointer;
+  }
+
+  /* ---------- Protocol screen ---------- */
+  .protocol-head{padding:16px 18px 4px;}
+  .protocol-head .warn{
+    background:linear-gradient(135deg,#2a1a10,#201212); border:1px solid var(--accent-dim);
+    border-radius:14px; padding:16px; text-align:center;
+  }
+  .protocol-head .warn .big{font-size:16px; font-weight:800; color:var(--accent); margin-bottom:6px;}
+  .protocol-head .warn .small{font-size:12.5px; color:var(--muted); line-height:1.5;}
+  .protocol-list{padding:14px 18px 20px; display:flex; flex-direction:column; gap:12px;}
+  .protocol-item{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; display:flex; gap:12px;}
+  .protocol-num{
+    width:34px; height:34px; border-radius:10px; background:var(--accent); color:#fff; font-weight:800;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px;
+  }
+  .protocol-item h4{margin:0 0 4px; font-size:14.5px;}
+  .protocol-item .dose{font-size:12px; color:var(--accent); font-weight:600; margin-bottom:4px;}
+  .protocol-item p{margin:0; font-size:12.5px; line-height:1.5; color:#cfccc8;}
+
+  /* ---------- Bottom nav ---------- */
+  .bottom-nav{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:480px; display:flex; background:var(--bg2);
+    border-top:1px solid var(--line); z-index:10;
+  }
+  .bottom-nav button{
+    flex:1; background:none; border:none; color:var(--muted); padding:10px 0 8px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10.5px;
+  }
+  .bottom-nav button .ic{font-size:19px;}
+  .bottom-nav button.active{color:var(--accent);}
+
+  /* ---------- Modal (exercise info / timer) ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:50; display:none;
+    align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.active{display:flex;}
+  .modal-sheet{
+    width:100%; max-width:480px; background:var(--bg2); border-radius:20px 20px 0 0;
+    padding:18px 20px 26px; max-height:82vh; overflow-y:auto;
+  }
+  .modal-sheet .close-row{display:flex; justify-content:flex-end; margin-bottom:4px;}
+  .modal-sheet .close-row button{
+    background:var(--card); border:none; color:var(--muted); width:30px; height:30px; border-radius:50%;
+    font-size:15px; cursor:pointer;
+  }
+  .modal-sheet h3{margin:0 0 10px; font-size:17px;}
+  .modal-sheet .label{font-size:11px; color:var(--accent); font-weight:700; letter-spacing:.4px; margin:12px 0 3px;}
+  .modal-sheet .label:first-of-type{margin-top:0;}
+  .modal-sheet p{margin:0; font-size:13.5px; line-height:1.55; color:#d5d2ce;}
+
+  /* timer modal */
+  #timer-modal .modal-sheet{text-align:center;}
+  #timer-name{font-size:14px; color:var(--muted); margin-bottom:2px;}
+  #timer-phase{font-size:15px; font-weight:700; color:var(--accent); margin-bottom:10px; min-height:20px;}
+  #timer-display{font-size:56px; font-weight:800; letter-spacing:1px; margin:6px 0 4px; font-variant-numeric:tabular-nums;}
+  #timer-round{font-size:12.5px; color:var(--muted); margin-bottom:18px;}
+  .timer-controls{display:flex; gap:10px; justify-content:center;}
+  .timer-controls button{
+    padding:12px 22px; border-radius:12px; border:none; font-size:14px; font-weight:700; cursor:pointer;
+  }
+  #timer-start{background:var(--accent); color:#fff;}
+  #timer-reset{background:var(--card); color:var(--text); border:1px solid var(--line);}
+
+  ::-webkit-scrollbar{width:0;height:0;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================== WELCOME ===================== -->
+  <div class="screen active" id="screen-welcome">
+    <div class="logo">ТІЗЕ</div>
+    <div class="logo-sub">каз. «колено»</div>
+    <p>Оригинальная 3-недельная программа для укрепления и восстановления коленных суставов. Разработана для людей от 16 до 45 лет, любого уровня подготовки, любого вида спорта.</p>
+    <div class="phases">
+      <div class="phase-row"><div class="phase-num">НЕДЕЛЯ 1</div><div class="phase-txt"><b>ОСНОВА</b> — пробуждение суставов, базовые паттерны движения</div></div>
+      <div class="phase-row"><div class="phase-num">НЕДЕЛЯ 2</div><div class="phase-txt"><b>НАГРУЗКА</b> — увеличение объёма, баланс на одной ноге</div></div>
+      <div class="phase-row"><div class="phase-num">НЕДЕЛЯ 3</div><div class="phase-txt"><b>ЗАКРЕПЛЕНИЕ</b> — пиковая нагрузка, координация, готовность к спорту</div></div>
+    </div>
+    <button id="start-btn">Начать программу →</button>
+  </div>
+
+  <!-- ===================== PROGRAM ===================== -->
+  <div class="screen" id="screen-program">
+    <div class="topbar" id="program-topbar">
+      <h1>Программа ТІЗЕ</h1>
+    </div>
+    <div class="week-tabs" id="week-tabs"></div>
+    <div class="week-label" id="week-label"></div>
+    <div class="day-grid" id="day-grid"></div>
+  </div>
+
+  <!-- ===================== DAY DETAIL ===================== -->
+  <div class="screen" id="screen-day">
+    <div class="topbar">
+      <button class="back-btn" id="day-back">←</button>
+      <h1>День <span id="day-header-num"></span></h1>
+    </div>
+    <div class="day-nav">
+      <button id="day-prev">‹ пред.</button>
+      <div class="day-title" id="day-title-block"></div>
+      <button id="day-next">след. ›</button>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="day-progress-fill"></div></div>
+      <div class="progress-label" id="day-progress-label"></div>
+    </div>
+    <div class="tip-box" id="day-tip"></div>
+    <div class="ex-list" id="day-ex-list"></div>
+  </div>
+
+  <!-- ===================== ABOUT EXERCISES ===================== -->
+  <div class="screen" id="screen-about">
+    <div class="topbar"><h1>Об упражнениях</h1></div>
+    <div class="about-list" id="about-list"></div>
+  </div>
+
+  <!-- ===================== PROTOCOL ===================== -->
+  <div class="screen" id="screen-protocol">
+    <div class="topbar"><h1>⚡ Протокол успеха</h1></div>
+    <div class="protocol-head">
+      <div class="warn">
+        <div class="big">Без этого программа работает на 50%</div>
+        <div class="small">Это не реклама — это часть методики.</div>
+      </div>
+    </div>
+    <div class="protocol-list" id="protocol-list"></div>
+  </div>
+
+  <!-- ===================== BOTTOM NAV ===================== -->
+  <div class="bottom-nav" id="bottom-nav" style="display:none;">
+    <button data-tab="program"><span class="ic">📅</span>Программа</button>
+    <button data-tab="about"><span class="ic">📖</span>Об упражнениях</button>
+    <button data-tab="protocol"><span class="ic">⚡</span>Протокол</button>
+  </div>
+
+  <!-- ===================== EXERCISE INFO MODAL ===================== -->
+  <div class="modal-overlay" id="info-modal">
+    <div class="modal-sheet">
+      <div class="close-row"><button onclick="closeModal('info-modal')">✕</button></div>
+      <h3 id="info-name"></h3>
+      <div class="label">ДЛЯ ЧЕГО</div>
+      <p id="info-purpose"></p>
+      <div class="label">КАК ВЫПОЛНЯТЬ</div>
+      <p id="info-howto"></p>
+      <button class="video-btn">▶ Видео</button>
+    </div>
+  </div>
+
+  <!-- ===================== TIMER MODAL ===================== -->
+  <div class="modal-overlay" id="timer-modal">
+    <div class="modal-sheet">
+      <div class="close-row"><button onclick="closeTimer()">✕</button></div>
+      <div id="timer-name"></div>
+      <div id="timer-phase"></div>
+      <div id="timer-display">00:00</div>
+      <div id="timer-round"></div>
+      <div class="timer-controls">
+        <button id="timer-start" onclick="timerToggle()">Старт</button>
+        <button id="timer-reset" onclick="timerReset()">Сброс</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================
+   DATA: exercise library
+========================================================= */
+const EXERCISES = {
+  toeRaises:{name:"Подъёмы на носки", purpose:"Икроножная и камбаловидная мышцы, ахиллово сухожилие — укрепляют опору стопы и снижают ударную нагрузку на колено.", howto:"Встань прямо, ноги на ширине таза. Медленно поднимись на носки, задержись на секунду, опустись контролируемо. Не заваливай стопу наружу или внутрь."},
+  ankleCircles:{name:"Вращения стопы", purpose:"Улучшают подвижность голеностопа — сустава, который напрямую влияет на нагрузку на колено при ходьбе и прыжках.", howto:"Приподними одну ногу, вращай стопой по кругу — сначала в одну сторону, затем в другую. Двигай именно стопой, а не всей ногой."},
+  toeStretch:{name:"Растяжка большого пальца", purpose:"Растягивает подошвенную фасцию и сгибатели пальцев, улучшая амортизацию стопы при беге и прыжках.", howto:"Сидя или стоя, аккуратно потяни большой палец стопы на себя рукой или упрись им в стену. Держи растяжение без боли, дыши ровно."},
+  kneeFlexExt:{name:"Сгибание-разгибание колена стоя", purpose:"Разгоняет кровообращение вокруг коленного сустава, готовит его к нагрузке, тренирует контроль движения.", howto:"Стоя, слегка сгибай и разгибай колено, не отрывая стопу от пола полностью. Движение плавное, амплитуда небольшая, темп средний."},
+  hipFlow:{name:"ТБС Флоу", purpose:"Мобилизация тазобедренного сустава — снимает часть нагрузки с колена, распределяя её на более крупный сустав.", howto:"Стоя на одной ноге, вращай второй ногой внутрь, наружу и вперёд-назад, слегка касаясь пола. Держи корпус стабильным, опорную ногу — мягкой в колене."},
+  halfSquatToe:{name:"Полуприсед с подъёмом пальцев", purpose:"Квадрицепс и мышцы стопы совместно — тренирует связку «приседание + баланс на стопе».", howto:"Опустись в неглубокий присед, затем на выходе вверх поднимись на носки. Колени двигаются по линии стоп, спина прямая."},
+  wallSit:{name:"Стульчик у стены", purpose:"Изометрическая сила квадрицепса без ударной нагрузки на сустав — база для устойчивости колена.", howto:"Спиной прижмись к стене, опустись до угла в коленях около 90°. Держи позицию, вес равномерно на обеих стопах, колени не выходят за носки."},
+  isoLunge:{name:"Изометрический выпад", purpose:"Укрепляет квадрицепс и ягодичные в положении выпада, тренирует стабильность колена под нагрузкой в одной точке.", howto:"Сделай шаг в выпад, медленно опустись за 10 секунд, затем замри в нижней точке на 10 секунд. Переднее колено не должно «заваливаться» внутрь."},
+  hipRotation:{name:"Ротация тазобедренного сустава", purpose:"Снимает напряжение с ТБС и поясницы, улучшает общую подвижность ноги, косвенно разгружает колено.", howto:"Стоя, опираясь при необходимости на опору, выполняй плавные круговые движения бедром в тазобедренном суставе. Двигай именно бедром, а не всем корпусом."},
+  softLanding:{name:"Мягкое приземление с возвышения", purpose:"Учит правильно гасить ударную нагрузку при приземлении — ключевой навык профилактики травм колена.", howto:"Встань на невысокое возвышение, спрыгни и приземлись мягко на слегка согнутые колени. Приземляйся тихо, без «хлопка» стопами о пол."},
+  lightJumps:{name:"Лёгкие прыжки 3 варианта", purpose:"Развивает эластичность и реактивность мышц вокруг колена в безопасном, контролируемом режиме.", howto:"Выполняй лёгкие прыжки на месте, чередуя варианты (на двух ногах, из стороны в сторону, вперёд-назад). Усилие невысокое, приземление мягкое, колени пружинят."},
+  hamstringStretch:{name:"Растяжка задней поверхности бедра", purpose:"Снимает напряжение с задней цепи мышц, которая балансирует работу квадрицепса вокруг колена.", howto:"Вытяни одну ногу вперёд, слегка наклонись корпусом вперёд с прямой спиной, пока не почувствуешь растяжение под коленом. Не тяни рывками, дыши спокойно."},
+  hamstringIso:{name:"Изометрика задней мышцы бедра", purpose:"Изометрическая сила задней поверхности бедра — стабилизирует колено сзади, дополняя работу квадрицепса.", howto:"Согни колено и удерживай напряжение задней поверхности бедра, не давая ноге двигаться. Колено держи чуть согнутым, за тазом."},
+  legAdduction:{name:"Сведение-разведение ног сидя", purpose:"Приводящие и отводящие мышцы бедра — боковая стабилизация колена при поворотах и смене направления.", howto:"Сидя на полу или стуле, быстро и чётко своди и разводи прямые ноги в стороны. Двигай именно ногами, таз стабилен."},
+  calfWall:{name:"Укрепление голени у стены", purpose:"Изометрика икроножной мышцы — поддержка голеностопа, который работает в связке с коленом.", howto:"Встань у стены, поднимись на носки и удерживай пятку максимально высоко над полом заданное время. Не заваливай вес на одну сторону стопы."},
+  singleLegStand:{name:"Стойка на одной ноге", purpose:"Тренирует стабилизаторы колена и ТБС, проприоцепцию — способность сустава «чувствовать» своё положение.", howto:"Встань на одну ногу, вторую слегка согни, взгляд зафиксируй в одной точке. Держи опорное колено мягким, не «запертым»."},
+  kneeRotation:{name:"Вращение колена", purpose:"Лёгкая мобилизация самого коленного сустава — разгоняет кровообращение и синовиальную жидкость.", howto:"Слегка согни колени, положи ладони на них и плавно вращай колени по кругу внутрь и наружу. Движение мягкое, без боли и хруста через силу."},
+  reverseNordic:{name:"Обратный нордик наклон", purpose:"Эксцентрическая нагрузка на квадрицепс через полный диапазон — один из самых эффективных элементов для укрепления колена.", howto:"Встань на колени, таз и корпус держи на одной линии, медленно отклоняйся назад от коленей, контролируя напряжение квадрицепсов. Возвращайся в исходное положение с помощью мышц бедра, а не рывком."}
+};
+
+/* =========================================================
+   DATA: 21 days
+   ex(id, meta, timer?) — timer: {rounds, phases:[{label,sec}], rest}
+========================================================= */
+function ex(id, meta, timer){ return {id, meta, timer: timer||null}; }
+
+const DAYS = [
+/* Неделя 1 */
+{week:1, title:"Сила + Статика", tip:"Представь что каждый полуприсед — это уход от удара: спина прямая, корпус собран, вес на передней части стопы.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 раз каждой ногой, в обе стороны"),
+  ex("toeStretch","1 подход × 30 сек каждая нога", {rounds:2, phases:[{label:"Растяжка",sec:30}], rest:5}),
+  ex("kneeFlexExt","1 подход × 40 повторений"),
+  ex("hipFlow","1 подход × 20 повторений (внутрь + наружу + вперёд-назад = 1 повтор)"),
+  ex("halfSquatToe","1 подход × 15 повторений"),
+  ex("wallSit","3 подхода × 30 сек, отдых 30 сек", {rounds:3, phases:[{label:"Держи",sec:30}], rest:30}),
+  ex("isoLunge","5 подходов × 10 сек вниз + 10 сек удержание, отдых минимальный", {rounds:5, phases:[{label:"Вниз",sec:10},{label:"Удержание",sec:10}], rest:5}),
+  ex("hipRotation","1 подход × 5 повторений")
+]},
+{week:1, title:"Взрыв + Прыжки", tip:"При приземлении сразу принимай устойчивую стойку — ноги чуть шире плеч, колени мягко согнуты.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 30 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:30}], rest:5}),
+  ex("kneeFlexExt","1 подход × 40 повторений"),
+  ex("hipFlow","1 подход × 20 повторений"),
+  ex("halfSquatToe","1 подход × 15 повторений"),
+  ex("softLanding","1 подход × 15 повторений, высота 15-20 см"),
+  ex("lightJumps","1 подход × 20 сек каждый вариант, усилие 40%, без пауз", {rounds:3, phases:[{label:"Вариант",sec:20}], rest:0}),
+  ex("hamstringStretch","1 подход × 2 минуты", {rounds:1, phases:[{label:"Растяжка",sec:120}], rest:0})
+]},
+{week:1, title:"Стабилизация", tip:"После упражнений постой 30 сек на одной ноге — это лучший индикатор прогресса стабилизаторов.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 30 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:30}], rest:5}),
+  ex("kneeFlexExt","1 подход × 40 повторений"),
+  ex("hipFlow","1 подход × 20 повторений"),
+  ex("halfSquatToe","1 подход × 15 повторений"),
+  ex("hamstringIso","2 подхода × 45 сек, колено за тазом, максимальное усилие без судорог", {rounds:2, phases:[{label:"Держи",sec:45}], rest:15}),
+  ex("legAdduction","1 подход × 20 каждую ногу, быстро и чётко"),
+  ex("calfWall","1 подход × 90 сек, пятка над полом", {rounds:1, phases:[{label:"Держи",sec:90}], rest:0}),
+  ex("hipRotation","1 подход × 5 повторений")
+]},
+{week:1, title:"Сила + Статика (прогрессия)", tip:"День 4 = День 1 с повышенной нагрузкой. Следи за техникой, не за скоростью.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 30 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:30}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 25 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("wallSit","3 подхода × 40 сек, отдых 30 сек", {rounds:3, phases:[{label:"Держи",sec:40}], rest:30}),
+  ex("isoLunge","7 подходов × 10 сек вниз + 10 сек удержание, отдых минимальный", {rounds:7, phases:[{label:"Вниз",sec:10},{label:"Удержание",sec:10}], rest:5}),
+  ex("hipRotation","1 подход × 5 повторений")
+]},
+{week:1, title:"Взрыв + Прыжки (прогрессия)", tip:"Мягкость приземления — главный индикатор здоровья сустава.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 30 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:30}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 25 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("softLanding","1 подход × 25 повторений, высота 15-20 см"),
+  ex("lightJumps","1 подход × 25 сек каждый, без пауз", {rounds:3, phases:[{label:"Вариант",sec:25}], rest:0}),
+  ex("hamstringStretch","1 подход × 2 минуты", {rounds:1, phases:[{label:"Растяжка",sec:120}], rest:0})
+]},
+{week:1, title:"Стабилизация (прогрессия)", tip:"Если чувствуешь прогресс — попробуй стоять на одной ноге с закрытыми глазами.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 30 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:30}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 25 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("hamstringIso","2 подхода × 1 минута, колено за тазом", {rounds:2, phases:[{label:"Держи",sec:60}], rest:15}),
+  ex("legAdduction","1 подход × 30 каждую ногу"),
+  ex("calfWall","1 подход × 2 минуты", {rounds:1, phases:[{label:"Держи",sec:120}], rest:0}),
+  ex("hipRotation","1 подход × 5 повторений")
+]},
+{week:1, title:"Восстановление", tip:"Лёгкий день. Цель — разогнать кровь, не нагрузить. Двигайся медленно и осознанно.",
+ exercises:[
+  ex("ankleCircles","1 подход × 50 каждую ногу, плавные"),
+  ex("toeStretch","1 подход × 40 сек", {rounds:1, phases:[{label:"Растяжка",sec:40}], rest:0}),
+  ex("kneeFlexExt","1 подход × 150 повторений, медленно"),
+  ex("kneeRotation","2 подхода × 15 внутрь и наружу"),
+  ex("reverseNordic","1 подход × 90 сек", {rounds:1, phases:[{label:"Держи",sec:90}], rest:0}),
+  ex("hamstringStretch","1 подход × 2 минуты", {rounds:1, phases:[{label:"Растяжка",sec:120}], rest:0})
+]},
+
+/* Неделя 2 */
+{week:2, title:"Сила + Статика", tip:"Добавляем стойку на одной ноге. Держи взгляд в одну точку — это помогает балансу.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:40}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 30 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("wallSit","3 подхода × 50 сек, отдых 30 сек", {rounds:3, phases:[{label:"Держи",sec:50}], rest:30}),
+  ex("isoLunge","8 подходов × 10 сек вниз + 10 сек удержание", {rounds:8, phases:[{label:"Вниз",sec:10},{label:"Удержание",sec:10}], rest:5}),
+  ex("singleLegStand","1 подход × 1 минута каждую ногу", {rounds:2, phases:[{label:"Держи",sec:60}], rest:10}),
+  ex("hipRotation","1 подход × 5 повторений")
+]},
+{week:2, title:"Взрыв + Прыжки", tip:"Приземляйся мягко, сразу стабилизируй позицию.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:40}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 30 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("softLanding","1 подход × 30 повторений, высота 20-25 см"),
+  ex("lightJumps","1 подход × 30 сек каждый, без пауз", {rounds:3, phases:[{label:"Вариант",sec:30}], rest:0}),
+  ex("hamstringStretch","1 подход × 3 минуты", {rounds:1, phases:[{label:"Растяжка",sec:180}], rest:0})
+]},
+{week:2, title:"Стабилизация", tip:"Стойка на одной ноге на 2 минуты — серьёзная тренировка баланса. Если трудно — сначала держись за стену.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:40}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 30 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("hamstringIso","2 подхода × 1 минута", {rounds:2, phases:[{label:"Держи",sec:60}], rest:15}),
+  ex("legAdduction","1 подход × 40 каждую ногу"),
+  ex("calfWall","1 подход × 2.5 минуты", {rounds:1, phases:[{label:"Держи",sec:150}], rest:0}),
+  ex("singleLegStand","1 подход × 2 минуты каждую ногу", {rounds:2, phases:[{label:"Держи",sec:120}], rest:10}),
+  ex("hipRotation","1 подход × 5 повторений")
+]},
+{week:2, title:"Сила + Статика (прогрессия)", tip:"Стульчик 1 минута — если колени сигналят, снизь нагрузку. Слушай тело.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:40}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 30 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("wallSit","3 подхода × 1 минута, отдых 30 сек", {rounds:3, phases:[{label:"Держи",sec:60}], rest:30}),
+  ex("isoLunge","9 подходов × 10 сек вниз + 10 сек удержание", {rounds:9, phases:[{label:"Вниз",sec:10},{label:"Удержание",sec:10}], rest:5}),
+  ex("singleLegStand","1 подход × 1.5 минуты каждую ногу", {rounds:2, phases:[{label:"Держи",sec:90}], rest:10}),
+  ex("hipRotation","1 подход × 5 повторений")
+]},
+{week:2, title:"Взрыв + Прыжки (прогрессия)", tip:"40 секунд каждой вариации — держи интенсивность ровной на протяжении всего времени.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:40}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 30 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("softLanding","1 подход × 35 повторений, высота 20-25 см"),
+  ex("lightJumps","1 подход × 40 сек каждый, без пауз", {rounds:3, phases:[{label:"Вариант",sec:40}], rest:0}),
+  ex("hamstringStretch","1 подход × 3 минуты", {rounds:1, phases:[{label:"Растяжка",sec:180}], rest:0})
+]},
+{week:2, title:"Стабилизация (прогрессия)", tip:"50 повторов сведения-разведения и 3 минуты голени. Держи темп, не теряй форму.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:40}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 30 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("hamstringIso","2 подхода × 1 минута", {rounds:2, phases:[{label:"Держи",sec:60}], rest:15}),
+  ex("legAdduction","1 подход × 50 каждую ногу"),
+  ex("calfWall","1 подход × 3 минуты", {rounds:1, phases:[{label:"Держи",sec:180}], rest:0}),
+  ex("singleLegStand","1 подход × 2 минуты каждую ногу", {rounds:2, phases:[{label:"Держи",sec:120}], rest:10}),
+  ex("hipRotation","1 подход × 5 повторений")
+]},
+{week:2, title:"Восстановление", tip:"Вторая неделя позади — ты молодец. Только мягкое движение и растяжка.",
+ exercises:[
+  ex("ankleCircles","1 подход × 50 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек", {rounds:1, phases:[{label:"Растяжка",sec:40}], rest:0}),
+  ex("kneeFlexExt","1 подход × 200 повторений"),
+  ex("kneeRotation","2 подхода × 20 внутрь и наружу"),
+  ex("reverseNordic","1 подход × 2 минуты", {rounds:1, phases:[{label:"Держи",sec:120}], rest:0}),
+  ex("hamstringStretch","1 подход × 3 минуты", {rounds:1, phases:[{label:"Растяжка",sec:180}], rest:0})
+]},
+
+/* Неделя 3 */
+{week:3, title:"Сила + Статика (пик)", tip:"Финальная неделя — пиковая нагрузка. Ты готов к этому.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:40}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 30 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("wallSit","3 подхода × 1 минута, отдых 20 сек", {rounds:3, phases:[{label:"Держи",sec:60}], rest:20}),
+  ex("isoLunge","10 подходов × 10 сек вниз + 10 сек удержание", {rounds:10, phases:[{label:"Вниз",sec:10},{label:"Удержание",sec:10}], rest:5}),
+  ex("singleLegStand","1 подход × 2 минуты каждую ногу, попробуй с закрытыми глазами", {rounds:2, phases:[{label:"Держи",sec:120}], rest:10}),
+  ex("hipRotation","1 подход × 5 повторений")
+]},
+{week:3, title:"Взрыв + Прыжки (пик)", tip:"Контроль приземления важнее высоты — это твоя защита от травм в будущем.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:40}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 30 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("softLanding","1 подход × 40 повторений, высота 25-30 см"),
+  ex("lightJumps","1 подход × 45 сек каждый, без пауз", {rounds:3, phases:[{label:"Вариант",sec:45}], rest:0}),
+  ex("hamstringStretch","1 подход × 3 минуты", {rounds:1, phases:[{label:"Растяжка",sec:180}], rest:0})
+]},
+{week:3, title:"Стабилизация + Координация (пик)", tip:"Стойка 3 минуты на каждой ноге — финальный уровень баланса программы.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:40}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 30 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("hamstringIso","2 подхода × 1 минута", {rounds:2, phases:[{label:"Держи",sec:60}], rest:15}),
+  ex("legAdduction","1 подход × 50 каждую ногу"),
+  ex("calfWall","1 подход × 3 минуты", {rounds:1, phases:[{label:"Держи",sec:180}], rest:0}),
+  ex("singleLegStand","1 подход × 3 минуты каждую ногу", {rounds:2, phases:[{label:"Держи",sec:180}], rest:10}),
+  ex("hipRotation","1 подход × 5 повторений")
+]},
+{week:3, title:"Сила + Статика (пик повтор)", tip:"Добавь чуть больше намерения в каждое движение — последние дни самые важные.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:40}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 30 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("wallSit","3 подхода × 1 минута, отдых 20 сек", {rounds:3, phases:[{label:"Держи",sec:60}], rest:20}),
+  ex("isoLunge","10 подходов × 10 сек вниз + 10 сек удержание", {rounds:10, phases:[{label:"Вниз",sec:10},{label:"Удержание",sec:10}], rest:5}),
+  ex("singleLegStand","1 подход × 2 минуты каждую ногу", {rounds:2, phases:[{label:"Держи",sec:120}], rest:10}),
+  ex("hipRotation","1 подход × 5 повторений")
+]},
+{week:3, title:"Взрыв + Прыжки (финал)", tip:"Последний взрывной день. Именно сейчас закладывается база для полноценных тренировок.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:40}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 30 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("softLanding","1 подход × 40 повторений, высота 25-30 см"),
+  ex("lightJumps","1 подход × 45 сек каждый, без пауз", {rounds:3, phases:[{label:"Вариант",sec:45}], rest:0}),
+  ex("hamstringStretch","1 подход × 3 минуты", {rounds:1, phases:[{label:"Растяжка",sec:180}], rest:0})
+]},
+{week:3, title:"Стабилизация + Координация (финал)", tip:"Последний тяжёлый день. После него только восстановление и финиш. Ты прошёл путь.",
+ exercises:[
+  ex("toeRaises","1 подход × 20 повторений"),
+  ex("ankleCircles","1 подход × 30 каждую ногу"),
+  ex("toeStretch","1 подход × 40 сек каждую ногу", {rounds:2, phases:[{label:"Растяжка",sec:40}], rest:5}),
+  ex("kneeFlexExt","1 подход × 50 повторений"),
+  ex("hipFlow","1 подход × 30 повторений"),
+  ex("halfSquatToe","1 подход × 20 повторений"),
+  ex("hamstringIso","2 подхода × 1 минута", {rounds:2, phases:[{label:"Держи",sec:60}], rest:15}),
+  ex("legAdduction","1 подход × 50 каждую ногу"),
+  ex("calfWall","1 подход × 3 минуты", {rounds:1, phases:[{label:"Держи",sec:180}], rest:0}),
+  ex("singleLegStand","1 подход × 3 минуты каждую ногу", {rounds:2, phases:[{label:"Держи",sec:180}], rest:10}),
+  ex("hipRotation","1 подход × 5 повторений")
+]},
+{week:3, title:"🏆 ФИНАЛ — Восстановление", tip:"21 день позади. Твои колени сильнее чем 3 недели назад. Поздравляю — ты прошёл программу ТІЗЕ! 🏆",
+ exercises:[
+  ex("ankleCircles","1 подход × 50 каждую ногу, плавные и осознанные"),
+  ex("toeStretch","1 подход × 40 сек", {rounds:1, phases:[{label:"Растяжка",sec:40}], rest:0}),
+  ex("kneeFlexExt","1 подход × 300 повторений, финальное движение программы"),
+  ex("kneeRotation","2 подхода × 20 внутрь и наружу"),
+  ex("reverseNordic","1 подход × 2 минуты", {rounds:1, phases:[{label:"Держи",sec:120}], rest:0}),
+  ex("hamstringStretch","1 подход × 3 минуты", {rounds:1, phases:[{label:"Растяжка",sec:180}], rest:0})
+]}
+];
+
+const PROTOCOL = [
+  {title:"Коллаген + Витамин C", dose:"10-15 г за 30-60 мин до тренировки", text:"Строительный материал для суставов именно в момент нагрузки."},
+  {title:"Морская соль", dose:"0.5-1 г на 500 мл воды утром и до тренировки", text:"Электролиты против судорог и для гидратации тканей."},
+  {title:"Креатин моногидрат", dose:"5 г в день, ежедневно", text:"Поддерживает силу в изометрических удержаниях. Загрузочная фаза не нужна."},
+  {title:"Вода", dose:"минимум 2 литра в день", text:"Хрящ на 70-80% состоит из воды. Без воды — нет восстановления."}
+];
+
+/* =========================================================
+   STATE
+========================================================= */
+const STORAGE_KEY = "tize_progress_v1";
+let state = loadState();
+let currentDayIdx = state.currentDay || 0;
+let currentWeek = Math.floor(currentDayIdx/7)+1;
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {started:false, currentDay:0, checks:{}};
+}
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+function isChecked(dayIdx, exIdx){
+  return !!(state.checks[dayIdx] && state.checks[dayIdx][exIdx]);
+}
+function toggleCheck(dayIdx, exIdx){
+  if(!state.checks[dayIdx]) state.checks[dayIdx] = {};
+  state.checks[dayIdx][exIdx] = !state.checks[dayIdx][exIdx];
+  saveState();
+}
+function dayCompletion(dayIdx){
+  const total = DAYS[dayIdx].exercises.length;
+  const done = state.checks[dayIdx] ? Object.values(state.checks[dayIdx]).filter(Boolean).length : 0;
+  return {done, total};
+}
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function setTab(tab){
+  document.querySelectorAll(".bottom-nav button").forEach(b=>{
+    b.classList.toggle("active", b.dataset.tab===tab);
+  });
+}
+
+document.getElementById("start-btn").addEventListener("click", ()=>{
+  state.started = true;
+  saveState();
+  document.getElementById("bottom-nav").style.display = "flex";
+  renderProgram();
+  showScreen("screen-program");
+  setTab("program");
+});
+
+document.querySelectorAll(".bottom-nav button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const tab = btn.dataset.tab;
+    setTab(tab);
+    if(tab==="program"){ renderProgram(); showScreen("screen-program"); }
+    if(tab==="about"){ renderAbout(); showScreen("screen-about"); }
+    if(tab==="protocol"){ renderProtocol(); showScreen("screen-protocol"); }
+  });
+});
+
+document.getElementById("day-back").addEventListener("click", ()=>{
+  renderProgram();
+  showScreen("screen-program");
+  setTab("program");
+});
+document.getElementById("day-prev").addEventListener("click", ()=>{
+  if(currentDayIdx>0){ currentDayIdx--; renderDay(currentDayIdx); }
+});
+document.getElementById("day-next").addEventListener("click", ()=>{
+  if(currentDayIdx<DAYS.length-1){ currentDayIdx++; renderDay(currentDayIdx); }
+});
+
+/* =========================================================
+   RENDER: Program (week tabs + day grid)
+========================================================= */
+function renderProgram(){
+  const tabsEl = document.getElementById("week-tabs");
+  tabsEl.innerHTML = "";
+  [1,2,3].forEach(w=>{
+    const b = document.createElement("div");
+    b.className = "week-tab" + (w===currentWeek ? " active" : "");
+    b.textContent = "Неделя " + w;
+    b.addEventListener("click", ()=>{ currentWeek = w; renderProgram(); });
+    tabsEl.appendChild(b);
+  });
+
+  const labels = {1:"ОСНОВА", 2:"НАГРУЗКА", 3:"ЗАКРЕПЛЕНИЕ"};
+  document.getElementById("week-label").textContent = "Неделя " + currentWeek + " — " + labels[currentWeek];
+
+  const grid = document.getElementById("day-grid");
+  grid.innerHTML = "";
+  DAYS.forEach((d, idx)=>{
+    if(d.week !== currentWeek) return;
+    const {done, total} = dayCompletion(idx);
+    const cell = document.createElement("div");
+    cell.className = "day-cell" + (done===total ? " done" : "") + (idx===currentDayIdx ? " current" : "");
+    cell.innerHTML = '<div class="n">'+(idx+1)+'</div><div class="t">'+d.title.replace(/\s*\(.*?\)/,'')+'</div>';
+    cell.addEventListener("click", ()=>{
+      currentDayIdx = idx;
+      state.currentDay = idx;
+      saveState();
+      renderDay(idx);
+      showScreen("screen-day");
+    });
+    grid.appendChild(cell);
+  });
+}
+
+/* =========================================================
+   RENDER: Day detail
+========================================================= */
+function renderDay(idx){
+  const d = DAYS[idx];
+  document.getElementById("day-header-num").textContent = idx+1;
+  document.getElementById("day-title-block").innerHTML =
+    d.title + "<small>Неделя " + d.week + " · День " + (idx+1) + " из 21</small>";
+  document.getElementById("day-prev").disabled = idx===0;
+  document.getElementById("day-next").disabled = idx===DAYS.length-1;
+  document.getElementById("day-tip").innerHTML = "💡 " + d.tip.replace(/^💡\s*/,'');
+
+  const {done, total} = dayCompletion(idx);
+  document.getElementById("day-progress-fill").style.width = (total? (done/total*100) : 0) + "%";
+  document.getElementById("day-progress-label").textContent = done + " / " + total + " выполнено";
+
+  const list = document.getElementById("day-ex-list");
+  list.innerHTML = "";
+  d.exercises.forEach((item, exIdx)=>{
+    const info = EXERCISES[item.id];
+    const checked = isChecked(idx, exIdx);
+    const row = document.createElement("div");
+    row.className = "ex-row" + (checked ? " checked" : "");
+
+    const check = document.createElement("div");
+    check.className = "ex-check";
+    check.textContent = checked ? "✓" : "";
+    check.addEventListener("click", ()=>{
+      toggleCheck(idx, exIdx);
+      renderDay(idx);
+    });
+
+    const body = document.createElement("div");
+    body.className = "ex-body";
+    const name = document.createElement("div");
+    name.className = "ex-name";
+    name.textContent = info.name;
+    name.addEventListener("click", ()=> openInfo(item.id));
+    const meta = document.createElement("div");
+    meta.className = "ex-meta";
+    meta.textContent = item.meta;
+
+    const actions = document.createElement("div");
+    actions.className = "ex-actions";
+    const infoBtn = document.createElement("button");
+    infoBtn.textContent = "ⓘ Подробнее";
+    infoBtn.addEventListener("click", ()=> openInfo(item.id));
+    actions.appendChild(infoBtn);
+    if(item.timer){
+      const timerBtn = document.createElement("button");
+      timerBtn.className = "timer-btn";
+      timerBtn.textContent = "⏱ Таймер";
+      timerBtn.addEventListener("click", ()=> openTimer(info.name, item.timer));
+      actions.appendChild(timerBtn);
+    }
+
+    body.appendChild(name);
+    body.appendChild(meta);
+    body.appendChild(actions);
+    row.appendChild(check);
+    row.appendChild(body);
+    list.appendChild(row);
+  });
+
+  document.getElementById("day-header-num").textContent = idx+1;
+}
+
+/* =========================================================
+   RENDER: About screen
+========================================================= */
+function renderAbout(){
+  const list = document.getElementById("about-list");
+  list.innerHTML = "";
+  Object.keys(EXERCISES).forEach(id=>{
+    const info = EXERCISES[id];
+    const card = document.createElement("div");
+    card.className = "about-card";
+    card.innerHTML =
+      '<h3>'+info.name+'</h3>'+
+      '<div class="label">ДЛЯ ЧЕГО</div><p>'+info.purpose+'</p>'+
+      '<div class="label">КАК ВЫПОЛНЯТЬ</div><p>'+info.howto+'</p>'+
+      '<button class="video-btn">▶ Видео</button>';
+    list.appendChild(card);
+  });
+}
+
+/* =========================================================
+   RENDER: Protocol screen
+========================================================= */
+function renderProtocol(){
+  const list = document.getElementById("protocol-list");
+  list.innerHTML = "";
+  PROTOCOL.forEach((p, i)=>{
+    const item = document.createElement("div");
+    item.className = "protocol-item";
+    item.innerHTML =
+      '<div class="protocol-num">'+(i+1)+'</div>'+
+      '<div><h4>'+p.title+'</h4><div class="dose">'+p.dose+'</div><p>'+p.text+'</p></div>';
+    list.appendChild(item);
+  });
+}
+
+/* =========================================================
+   MODAL: exercise info
+========================================================= */
+function openInfo(id){
+  const info = EXERCISES[id];
+  document.getElementById("info-name").textContent = info.name;
+  document.getElementById("info-purpose").textContent = info.purpose;
+  document.getElementById("info-howto").textContent = info.howto;
+  document.getElementById("info-modal").classList.add("active");
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove("active");
+}
+
+/* =========================================================
+   TIMER
+========================================================= */
+let timerState = null; // {name, rounds, phases, rest, round, phaseIdx, mode:'phase'|'rest', remaining, running, intervalId}
+let audioCtx = null;
+
+function beep(freq, dur){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+  }catch(e){}
+}
+
+function openTimer(name, cfg){
+  clearTimerInterval();
+  timerState = {
+    name,
+    rounds: cfg.rounds,
+    phases: cfg.phases,
+    rest: cfg.rest || 0,
+    round: 1,
+    phaseIdx: 0,
+    mode: "phase",
+    remaining: cfg.phases[0].sec,
+    running: false,
+    intervalId: null
+  };
+  document.getElementById("timer-name").textContent = name;
+  updateTimerUI();
+  document.getElementById("timer-start").textContent = "Старт";
+  document.getElementById("timer-modal").classList.add("active");
+}
+function closeTimer(){
+  clearTimerInterval();
+  document.getElementById("timer-modal").classList.remove("active");
+}
+function clearTimerInterval(){
+  if(timerState && timerState.intervalId){
+    clearInterval(timerState.intervalId);
+    timerState.intervalId = null;
+  }
+  if(timerState) timerState.running = false;
+}
+function fmt(sec){
+  const m = Math.floor(sec/60);
+  const s = sec % 60;
+  return (m<10?"0":"")+m + ":" + (s<10?"0":"")+s;
+}
+function updateTimerUI(){
+  const t = timerState;
+  if(!t) return;
+  const currentPhaseLabel = t.mode==="rest" ? "Отдых" : t.phases[t.phaseIdx].label;
+  document.getElementById("timer-phase").textContent = currentPhaseLabel;
+  document.getElementById("timer-display").textContent = fmt(t.remaining);
+  document.getElementById("timer-round").textContent = "Круг " + t.round + " из " + t.rounds;
+}
+function timerToggle(){
+  if(!timerState) return;
+  if(timerState.running){
+    clearTimerInterval();
+    document.getElementById("timer-start").textContent = "Продолжить";
+  } else {
+    timerState.running = true;
+    document.getElementById("timer-start").textContent = "Пауза";
+    timerState.intervalId = setInterval(timerTick, 1000);
+  }
+}
+function timerReset(){
+  if(!timerState) return;
+  clearTimerInterval();
+  timerState.round = 1;
+  timerState.phaseIdx = 0;
+  timerState.mode = "phase";
+  timerState.remaining = timerState.phases[0].sec;
+  document.getElementById("timer-start").textContent = "Старт";
+  updateTimerUI();
+}
+function timerTick(){
+  const t = timerState;
+  t.remaining--;
+  if(t.remaining <= 0){
+    beep(880, 0.18);
+    advanceTimer();
+    return;
+  }
+  if(t.remaining <= 3) beep(660, 0.08);
+  updateTimerUI();
+}
+function advanceTimer(){
+  const t = timerState;
+  if(t.mode === "phase"){
+    if(t.phaseIdx < t.phases.length-1){
+      t.phaseIdx++;
+      t.remaining = t.phases[t.phaseIdx].sec;
+      updateTimerUI();
+      return;
+    }
+    // phases done for this round
+    if(t.round < t.rounds && t.rest > 0){
+      t.mode = "rest";
+      t.remaining = t.rest;
+      updateTimerUI();
+      return;
+    }
+    if(t.round < t.rounds){
+      t.round++;
+      t.phaseIdx = 0;
+      t.remaining = t.phases[0].sec;
+      updateTimerUI();
+      return;
+    }
+    finishTimer();
+    return;
+  } else {
+    // rest finished -> next round
+    t.round++;
+    t.mode = "phase";
+    t.phaseIdx = 0;
+    t.remaining = t.phases[0].sec;
+    updateTimerUI();
+  }
+}
+function finishTimer(){
+  clearTimerInterval();
+  beep(880,0.15);
+  setTimeout(()=>beep(1046,0.2), 180);
+  document.getElementById("timer-phase").textContent = "Готово! 🎉";
+  document.getElementById("timer-display").textContent = "00:00";
+  document.getElementById("timer-start").textContent = "Старт";
+}
+
+/* =========================================================
+   INIT
+========================================================= */
+(function init(){
+  if(state.started){
+    document.getElementById("bottom-nav").style.display = "flex";
+    renderProgram();
+    showScreen("screen-program");
+    setTab("program");
+  }
+})();
+</script>
+</body>
+</html>
