@@ -1,0 +1,14 @@
+{
+  "name": "ТІЗЕ — программа для колена",
+  "short_name": "ТІЗЕ",
+  "description": "4-недельная программа для укрепления и восстановления коленных суставов",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e0e10",
+  "theme_color": "#0e0e10",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

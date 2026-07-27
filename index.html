@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="description" content="ТІЗЕ — 4-недельная программа для укрепления и восстановления коленных суставов">
+<meta name="theme-color" content="#0e0e10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ТІЗЕ">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
 <title>ТІЗЕ — программа для колена</title>
 <style>
   :root{
@@ -65,11 +72,46 @@
     padding:16px 18px 12px; border-bottom:1px solid var(--line);
     display:flex; align-items:center; gap:10px;
   }
-  .topbar .back-btn{
+  .topbar .back-btn, .topbar .help-btn{
     background:none; border:none; color:var(--accent); font-size:20px; cursor:pointer; padding:0 4px 0 0;
   }
   .topbar h1{font-size:17px; margin:0; font-weight:700; flex:1;}
   .topbar .sub{font-size:12px; color:var(--muted);}
+
+  /* ---------- Reminder banner ---------- */
+  .reminder-banner{
+    margin:12px 18px 0; padding:12px 14px; background:linear-gradient(135deg,#2a1a10,#1c1c1f);
+    border:1px solid var(--accent-dim); border-radius:12px; font-size:13px; color:#f0d9c9;
+    display:flex; align-items:center; gap:10px;
+  }
+  .reminder-banner span{flex:1; line-height:1.4;}
+  .reminder-banner button{
+    background:none; border:none; color:var(--muted); font-size:15px; cursor:pointer; padding:2px 4px;
+  }
+
+  /* ---------- Day notes ---------- */
+  .notes-box{padding:4px 18px 20px;}
+  .notes-label{font-size:12px; color:var(--accent); font-weight:700; letter-spacing:.4px; margin-bottom:6px;}
+  .notes-box textarea{
+    width:100%; min-height:70px; resize:vertical; background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:12px; color:var(--text); font-size:13.5px; line-height:1.5;
+    font-family:inherit;
+  }
+  .notes-box textarea:focus{outline:none; border-color:var(--accent-dim);}
+
+  /* ---------- Stats screen ---------- */
+  .stats-wrap{padding:14px 18px 20px;}
+  .stat-row{display:flex; gap:10px; margin-bottom:10px;}
+  .stat-card{
+    flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; text-align:center;
+  }
+  .stat-num{font-size:24px; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums;}
+  .stat-label{font-size:11px; color:var(--muted); margin-top:4px; line-height:1.3;}
+  .stat-weeks{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin:4px 0 16px; display:flex; flex-direction:column; gap:10px;}
+  .stat-week-row{display:flex; align-items:center; gap:10px;}
+  .stat-week-label{font-size:12px; color:var(--muted); width:64px; flex-shrink:0;}
+  .stat-week-pct{font-size:12px; color:var(--text); width:36px; text-align:right; font-variant-numeric:tabular-nums;}
+  .stat-heatmap-label{font-size:12px; color:var(--muted); margin-bottom:8px;}
 
   /* ---------- Program screen: week tabs + day grid ---------- */
   .week-tabs{display:flex; gap:8px; padding:14px 18px 4px; flex-wrap:wrap;}
@@ -260,6 +302,11 @@
   <div class="screen" id="screen-program">
     <div class="topbar" id="program-topbar">
       <h1>Программа ТІЗЕ</h1>
+      <button class="help-btn" id="help-btn" title="Как пользоваться">❓</button>
+    </div>
+    <div class="reminder-banner" id="reminder-banner" style="display:none;">
+      <span id="reminder-text"></span>
+      <button id="reminder-dismiss">✕</button>
     </div>
     <div class="week-tabs" id="week-tabs"></div>
     <div class="week-label" id="week-label"></div>
@@ -283,6 +330,16 @@
     </div>
     <div class="tip-box" id="day-tip"></div>
     <div class="ex-list" id="day-ex-list"></div>
+    <div class="notes-box">
+      <div class="notes-label">📝 ЗАМЕТКА К ДНЮ</div>
+      <textarea id="day-notes" placeholder="Например: колено сегодня повело себя хорошо..."></textarea>
+    </div>
+  </div>
+
+  <!-- ===================== STATS ===================== -->
+  <div class="screen" id="screen-stats">
+    <div class="topbar"><h1>📈 Статистика</h1></div>
+    <div class="stats-wrap" id="stats-wrap"></div>
   </div>
 
   <!-- ===================== ABOUT EXERCISES ===================== -->
@@ -313,6 +370,7 @@
   <div class="bottom-nav" id="bottom-nav" style="display:none;">
     <button data-tab="program"><span class="ic">📅</span>Программа</button>
     <button data-tab="about"><span class="ic">📖</span>Об упражнениях</button>
+    <button data-tab="stats"><span class="ic">📈</span>Статистика</button>
     <button data-tab="protocol"><span class="ic">⚡</span>Протокол</button>
   </div>
 
@@ -326,6 +384,26 @@
       <div class="label">КАК ВЫПОЛНЯТЬ</div>
       <p id="info-howto"></p>
       <div id="info-video"></div>
+    </div>
+  </div>
+
+  <!-- ===================== HELP MODAL ===================== -->
+  <div class="modal-overlay" id="help-modal">
+    <div class="modal-sheet">
+      <div class="close-row"><button onclick="closeModal('help-modal')">✕</button></div>
+      <h3>Как пользоваться приложением</h3>
+      <div class="label">ВЫПОЛНЕНИЕ</div>
+      <p>Отмечай упражнения галочкой слева от названия — прогресс дня сохраняется автоматически, даже без интернета.</p>
+      <div class="label">ТЕХНИКА И ВИДЕО</div>
+      <p>Нажми на название упражнения или кнопку «ⓘ Подробнее» — откроется описание техники и видео.</p>
+      <div class="label">ТАЙМЕР</div>
+      <p>Если у упражнения есть кнопка «⏱ Таймер» — она сама отсчитывает подходы и подсказывает звуком, когда менять фазу или сделать следующий подход.</p>
+      <div class="label">ЗАМЕТКИ</div>
+      <p>Внизу каждого дня можно оставить заметку — например, как сегодня повело себя колено.</p>
+      <div class="label">СТАТИСТИКА</div>
+      <p>Показывает прогресс по неделям и карту всех дней программы — нажми на день в карте, чтобы сразу перейти к нему.</p>
+      <div class="label">ОФЛАЙН</div>
+      <p>После первого открытия приложение работает без интернета — кроме видео, для них нужна сеть.</p>
     </div>
   </div>
 
@@ -810,23 +888,38 @@ function loadState(){
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw) return JSON.parse(raw);
   }catch(e){}
-  return {started:false, currentDay:0, checks:{}};
+  return {started:false, currentDay:0, checks:{}, notes:{}, completedAt:{}, reminderDismissedDate:null};
 }
 function saveState(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
+if(!state.notes) state.notes = {};
+if(!state.completedAt) state.completedAt = {};
+if(state.reminderDismissedDate === undefined) state.reminderDismissedDate = null;
+
 function isChecked(dayIdx, exIdx){
   return !!(state.checks[dayIdx] && state.checks[dayIdx][exIdx]);
 }
 function toggleCheck(dayIdx, exIdx){
   if(!state.checks[dayIdx]) state.checks[dayIdx] = {};
   state.checks[dayIdx][exIdx] = !state.checks[dayIdx][exIdx];
+  const c = dayCompletion(dayIdx);
+  if(c.done === c.total && !state.completedAt[dayIdx]){
+    state.completedAt[dayIdx] = Date.now();
+  }
   saveState();
 }
 function dayCompletion(dayIdx){
   const total = DAYS[dayIdx].exercises.length;
   const done = state.checks[dayIdx] ? Object.values(state.checks[dayIdx]).filter(Boolean).length : 0;
   return {done, total};
+}
+function getNote(dayIdx){
+  return state.notes[dayIdx] || "";
+}
+function setNote(dayIdx, text){
+  state.notes[dayIdx] = text;
+  saveState();
 }
 
 /* =========================================================
@@ -857,8 +950,18 @@ document.querySelectorAll(".bottom-nav button").forEach(btn=>{
     setTab(tab);
     if(tab==="program"){ renderProgram(); showScreen("screen-program"); }
     if(tab==="about"){ renderAbout(); showScreen("screen-about"); }
+    if(tab==="stats"){ renderStats(); showScreen("screen-stats"); }
     if(tab==="protocol"){ renderProtocol(); showScreen("screen-protocol"); }
   });
+});
+
+document.getElementById("help-btn").addEventListener("click", ()=>{
+  document.getElementById("help-modal").classList.add("active");
+});
+document.getElementById("reminder-dismiss").addEventListener("click", ()=>{
+  state.reminderDismissedDate = new Date().toDateString();
+  saveState();
+  document.getElementById("reminder-banner").style.display = "none";
 });
 
 document.getElementById("day-back").addEventListener("click", ()=>{
@@ -876,7 +979,20 @@ document.getElementById("day-next").addEventListener("click", ()=>{
 /* =========================================================
    RENDER: Program (week tabs + day grid)
 ========================================================= */
+function checkReminder(){
+  const banner = document.getElementById("reminder-banner");
+  const todayStr = new Date().toDateString();
+  const trainedToday = Object.values(state.completedAt).some(ts => new Date(ts).toDateString() === todayStr);
+  if(trainedToday || state.reminderDismissedDate === todayStr){
+    banner.style.display = "none";
+    return;
+  }
+  document.getElementById("reminder-text").textContent = "Не забудь потренироваться сегодня 💪";
+  banner.style.display = "flex";
+}
+
 function renderProgram(){
+  checkReminder();
   const tabsEl = document.getElementById("week-tabs");
   tabsEl.innerHTML = "";
   [1,2,3,4].forEach(w=>{
@@ -897,7 +1013,8 @@ function renderProgram(){
     const {done, total} = dayCompletion(idx);
     const cell = document.createElement("div");
     cell.className = "day-cell" + (done===total ? " done" : "") + (idx===currentDayIdx ? " current" : "");
-    cell.innerHTML = '<div class="n">'+(idx+1)+'</div><div class="t">'+d.title.replace(/^День \d+\s*/,'').replace(/^🏆\s*/,'')+'</div>';
+    const noteMark = (state.notes[idx] && state.notes[idx].trim()) ? '<span style="position:absolute;top:4px;left:6px;font-size:10px;">📝</span>' : '';
+    cell.innerHTML = noteMark+'<div class="n">'+(idx+1)+'</div><div class="t">'+d.title.replace(/^День \d+\s*/,'').replace(/^🏆\s*/,'')+'</div>';
     cell.addEventListener("click", ()=>{
       currentDayIdx = idx;
       state.currentDay = idx;
@@ -972,6 +1089,10 @@ function renderDay(idx){
     row.appendChild(body);
     list.appendChild(row);
   });
+
+  const notesEl = document.getElementById("day-notes");
+  notesEl.value = getNote(idx);
+  notesEl.oninput = ()=>{ setNote(idx, notesEl.value); };
 }
 
 /* =========================================================
@@ -990,6 +1111,69 @@ function renderAbout(){
       '<div class="label">КАК ВЫПОЛНЯТЬ</div><p>'+info.howto+'</p>'+
       videoAreaHtml(info.video);
     list.appendChild(card);
+  });
+}
+
+/* =========================================================
+   RENDER: Stats screen
+========================================================= */
+function renderStats(){
+  const wrap = document.getElementById("stats-wrap");
+  const totalDays = DAYS.length;
+  let daysDone = 0, exercisesDone = 0;
+
+  const weekAgg = {1:{done:0,total:0}, 2:{done:0,total:0}, 3:{done:0,total:0}, 4:{done:0,total:0}};
+  DAYS.forEach((d, idx)=>{
+    const c = dayCompletion(idx);
+    exercisesDone += c.done;
+    if(c.done === c.total) daysDone++;
+    weekAgg[d.week].done += c.done;
+    weekAgg[d.week].total += c.total;
+  });
+
+  const now = Date.now();
+  const last7 = Object.values(state.completedAt).filter(ts => now-ts < 7*24*60*60*1000).length;
+  const notesCount = Object.keys(state.notes).filter(k=>state.notes[k] && state.notes[k].trim()).length;
+
+  let html = '';
+  html += '<div class="stat-row">'
+    + '<div class="stat-card"><div class="stat-num">'+daysDone+'/'+totalDays+'</div><div class="stat-label">дней завершено полностью</div></div>'
+    + '<div class="stat-card"><div class="stat-num">'+exercisesDone+'</div><div class="stat-label">упражнений отмечено</div></div>'
+    + '</div>';
+  html += '<div class="stat-row">'
+    + '<div class="stat-card"><div class="stat-num">'+last7+'</div><div class="stat-label">дней завершено за 7 дней</div></div>'
+    + '<div class="stat-card"><div class="stat-num">'+notesCount+'</div><div class="stat-label">заметок оставлено</div></div>'
+    + '</div>';
+
+  html += '<div class="stat-weeks">';
+  [1,2,3,4].forEach(w=>{
+    const pct = weekAgg[w].total ? Math.round(weekAgg[w].done/weekAgg[w].total*100) : 0;
+    html += '<div class="stat-week-row"><div class="stat-week-label">Неделя '+w+'</div><div class="progress-bar-bg" style="flex:1;"><div class="progress-bar-fill" style="width:'+pct+'%"></div></div><div class="stat-week-pct">'+pct+'%</div></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="stat-heatmap-label">Карта прогресса — нажми на день, чтобы перейти к нему</div>';
+  html += '<div class="day-grid" id="stats-heatmap"></div>';
+
+  wrap.innerHTML = html;
+
+  const grid = document.getElementById("stats-heatmap");
+  DAYS.forEach((d, idx)=>{
+    const c = dayCompletion(idx);
+    const cell = document.createElement("div");
+    cell.className = "day-cell" + (c.done===c.total ? " done" : "");
+    if(c.done>0 && c.done<c.total) cell.style.opacity = (0.4 + 0.5*(c.done/c.total)).toFixed(2);
+    else if(c.done===0) cell.style.opacity = "0.35";
+    cell.innerHTML = '<div class="n">'+(idx+1)+'</div><div class="t">Нед. '+d.week+'</div>';
+    cell.addEventListener("click", ()=>{
+      currentDayIdx = idx;
+      currentWeek = d.week;
+      state.currentDay = idx;
+      saveState();
+      renderDay(idx);
+      showScreen("screen-day");
+    });
+    grid.appendChild(cell);
   });
 }
 
@@ -1132,12 +1316,14 @@ function advanceTimer(){
     if(t.phaseIdx < t.phases.length-1){
       t.phaseIdx++;
       t.remaining = t.phases[t.phaseIdx].sec;
+      beep(520, 0.1);
       updateTimerUI();
       return;
     }
     if(t.round < t.rounds && t.rest > 0){
       t.mode = "rest";
       t.remaining = t.rest;
+      beep(380, 0.1);
       updateTimerUI();
       return;
     }
@@ -1145,6 +1331,7 @@ function advanceTimer(){
       t.round++;
       t.phaseIdx = 0;
       t.remaining = t.phases[0].sec;
+      beep(520, 0.1);
       updateTimerUI();
       return;
     }
@@ -1155,6 +1342,7 @@ function advanceTimer(){
     t.mode = "phase";
     t.phaseIdx = 0;
     t.remaining = t.phases[0].sec;
+    beep(520, 0.1);
     updateTimerUI();
   }
 }
@@ -1178,6 +1366,12 @@ function finishTimer(){
     setTab("program");
   }
 })();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
