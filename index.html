@@ -219,6 +219,41 @@
   .protocol-item .sub-list{display:flex; flex-direction:column; gap:8px; margin-top:2px;}
   .protocol-item .sub-list .sub-title{font-size:12.5px; font-weight:700; color:var(--text);}
   .protocol-item .sub-list p{margin-top:2px;}
+
+  /* ---------- Ritual card ---------- */
+  .ritual-card{margin:14px 18px 0; padding:16px; background:var(--card); border:1px solid var(--line); border-radius:14px;}
+  .ritual-title{font-size:15px; font-weight:800; margin-bottom:4px;}
+  .ritual-sub{font-size:12px; color:var(--muted); margin-bottom:14px; line-height:1.4;}
+  .ritual-icons{display:flex; gap:10px; margin-bottom:12px;}
+  .ritual-icon-btn{
+    flex:1; background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:12px 6px;
+    display:flex; flex-direction:column; align-items:center; gap:6px; font-size:24px; cursor:pointer; color:var(--text);
+  }
+  .ritual-icon-btn span{font-size:11px; font-weight:600;}
+  .ritual-instruction{
+    font-size:12.5px; color:#cfccc8; background:var(--bg2); border-radius:10px; padding:10px 12px;
+    margin-bottom:12px; line-height:1.4; text-align:center;
+  }
+  .ritual-checks{display:flex; flex-direction:column; gap:8px;}
+  .ritual-check-row{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--card2);
+    border-radius:10px; cursor:pointer; font-size:13px;
+  }
+  .ritual-check-row.checked{background:#152018; color:#b9d9c4;}
+  .ritual-check-box{
+    width:20px; height:20px; border-radius:6px; border:2px solid var(--muted); display:flex;
+    align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0;
+  }
+  .ritual-check-row.checked .ritual-check-box{background:var(--good); border-color:var(--good); color:#fff;}
+  .ritual-timer{
+    margin-top:14px; padding:14px; background:linear-gradient(135deg,#2a1a10,#1c1c1f);
+    border:1px solid var(--accent-dim); border-radius:12px; text-align:center;
+  }
+  .ritual-timer-label{font-size:12px; color:var(--muted); margin-bottom:4px;}
+  .ritual-timer-display{font-size:32px; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; margin-bottom:10px;}
+  .ritual-remind-btn{background:var(--accent); color:#fff; border:none; border-radius:10px; padding:10px 16px; font-size:12.5px; font-weight:700; cursor:pointer;}
+  .ritual-remind-btn:disabled{opacity:.6; cursor:default;}
+  .ritual-history{margin-top:12px; font-size:11.5px; color:var(--muted); text-align:center;}
   .protocol-mix{
     margin:0 18px 12px; padding:14px; background:var(--card); border:1px solid var(--accent-dim);
     border-radius:12px;
@@ -357,6 +392,25 @@
         <div class="small">Это не реклама — это часть методики.</div>
       </div>
     </div>
+
+    <div class="ritual-card" id="ritual-card">
+      <div class="ritual-title">Твой ритуал успеха</div>
+      <div class="ritual-sub">Выполни за 45 минут до тренировки, чтобы запустить восстановление связок</div>
+      <div class="ritual-icons">
+        <button class="ritual-icon-btn" data-key="collagen">🧴<span>Коллаген</span></button>
+        <button class="ritual-icon-btn" data-key="salt">🧂<span>Соль</span></button>
+        <button class="ritual-icon-btn" data-key="creatine">⚡<span>Креатин</span></button>
+      </div>
+      <div class="ritual-instruction">Смешай коллаген + соль + креатин в 500 мл воды и выпей</div>
+      <div class="ritual-checks" id="ritual-checks"></div>
+      <div class="ritual-timer" id="ritual-timer" style="display:none;">
+        <div class="ritual-timer-label">⏳ Осталось до тренировки</div>
+        <div class="ritual-timer-display" id="ritual-timer-display">45:00</div>
+        <button class="ritual-remind-btn" id="ritual-remind-btn">🔔 Напомнить, когда истечёт</button>
+      </div>
+      <div class="ritual-history" id="ritual-history"></div>
+    </div>
+
     <div class="protocol-list" id="protocol-list"></div>
     <div class="protocol-mix">
       <h4>🥤 Как всыпать всё в один стакан</h4>
@@ -384,6 +438,15 @@
       <div class="label">КАК ВЫПОЛНЯТЬ</div>
       <p id="info-howto"></p>
       <div id="info-video"></div>
+    </div>
+  </div>
+
+  <!-- ===================== RITUAL INFO MODAL ===================== -->
+  <div class="modal-overlay" id="ritual-info-modal">
+    <div class="modal-sheet">
+      <div class="close-row"><button onclick="closeModal('ritual-info-modal')">✕</button></div>
+      <h3 id="ritual-info-name"></h3>
+      <p id="ritual-info-text"></p>
     </div>
   </div>
 
@@ -896,6 +959,8 @@ function saveState(){
 if(!state.notes) state.notes = {};
 if(!state.completedAt) state.completedAt = {};
 if(state.reminderDismissedDate === undefined) state.reminderDismissedDate = null;
+if(!state.protocol) state.protocol = {date:null, collagen:false, salt:false, creatine:false, startedAt:null};
+if(!state.protocolLog) state.protocolLog = [];
 
 function isChecked(dayIdx, exIdx){
   return !!(state.checks[dayIdx] && state.checks[dayIdx][exIdx]);
@@ -1180,7 +1245,121 @@ function renderStats(){
 /* =========================================================
    RENDER: Protocol screen
 ========================================================= */
+const RITUAL_INFO = {
+  collagen:{name:"Коллаген", text:"Строительный материал для связок и сухожилий — восполняет дефицит именно в момент нагрузки на сустав. Прими за 45 минут до тренировки, желательно вместе с витамином C для лучшего усвоения."},
+  salt:{name:"Морская соль", text:"Электролиты поддерживают гидратацию суставной ткани и нервно-мышечную проводимость, снижая риск судорог при статических удержаниях."},
+  creatine:{name:"Креатин", text:"Поддерживает силу в изометрических упражнениях и ускоряет восстановление мышц. Эффект накопительный — важна ежедневность, а не точное время приёма."}
+};
+
+let ritualInterval = null;
+const RITUAL_DURATION_MS = 45*60*1000;
+
+function ensureProtocolState(){
+  const today = new Date().toDateString();
+  if(state.protocol.date !== today){
+    state.protocol = {date:today, collagen:false, salt:false, creatine:false, startedAt:null};
+    saveState();
+  }
+}
+
+function renderRitual(){
+  ensureProtocolState();
+  const p = state.protocol;
+
+  const checksEl = document.getElementById("ritual-checks");
+  const items = [
+    {key:"collagen", label:"Коллаген выпит"},
+    {key:"salt", label:"Соль добавлена"},
+    {key:"creatine", label:"Креатин принят"}
+  ];
+  checksEl.innerHTML = "";
+  items.forEach(it=>{
+    const row = document.createElement("div");
+    row.className = "ritual-check-row" + (p[it.key] ? " checked" : "");
+    row.innerHTML = '<span class="ritual-check-box">'+(p[it.key]?"✓":"")+'</span><span>'+it.label+'</span>';
+    row.addEventListener("click", ()=>{
+      p[it.key] = !p[it.key];
+      if(p.collagen && p.salt && p.creatine){
+        if(!p.startedAt){
+          p.startedAt = Date.now();
+          state.protocolLog.push(p.startedAt);
+        }
+      } else {
+        p.startedAt = null;
+      }
+      saveState();
+      renderRitual();
+    });
+    checksEl.appendChild(row);
+  });
+
+  const timerBox = document.getElementById("ritual-timer");
+  clearInterval(ritualInterval);
+  if(p.startedAt){
+    timerBox.style.display = "block";
+    updateRitualCountdown();
+    ritualInterval = setInterval(updateRitualCountdown, 1000);
+  } else {
+    timerBox.style.display = "none";
+  }
+
+  const now = Date.now();
+  const weekCount = state.protocolLog.filter(ts => now-ts < 7*24*60*60*1000).length;
+  document.getElementById("ritual-history").textContent = "Выполнено ритуалов за 7 дней: " + weekCount;
+}
+
+function updateRitualCountdown(){
+  const p = state.protocol;
+  const remaining = RITUAL_DURATION_MS - (Date.now() - p.startedAt);
+  const disp = document.getElementById("ritual-timer-display");
+  if(remaining <= 0){
+    disp.textContent = "Можно тренироваться! 💪";
+    clearInterval(ritualInterval);
+    return;
+  }
+  const totalSec = Math.floor(remaining/1000);
+  const m = Math.floor(totalSec/60);
+  const s = totalSec%60;
+  disp.textContent = (m<10?"0":"")+m + ":" + (s<10?"0":"")+s;
+}
+
+document.querySelectorAll(".ritual-icon-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const info = RITUAL_INFO[btn.dataset.key];
+    document.getElementById("ritual-info-name").textContent = info.name;
+    document.getElementById("ritual-info-text").textContent = info.text;
+    document.getElementById("ritual-info-modal").classList.add("active");
+  });
+});
+
+document.getElementById("ritual-remind-btn").addEventListener("click", ()=>{
+  const btn = document.getElementById("ritual-remind-btn");
+  const p = state.protocol;
+  if(!p.startedAt) return;
+  const remaining = RITUAL_DURATION_MS - (Date.now() - p.startedAt);
+  if(remaining <= 0) return;
+  const scheduleAlert = ()=>{
+    btn.disabled = true;
+    btn.textContent = "🔔 Напоминание запланировано";
+    setTimeout(()=>{
+      try{
+        if("Notification" in window && Notification.permission==="granted"){
+          new Notification("ТІЗЕ", {body:"Протокол усвоен — можно тренироваться! 💪"});
+        }
+      }catch(e){}
+      beep(880,0.15);
+      setTimeout(()=>beep(1046,0.2), 180);
+    }, remaining);
+  };
+  if("Notification" in window && Notification.permission !== "granted"){
+    Notification.requestPermission().then(()=> scheduleAlert());
+  } else {
+    scheduleAlert();
+  }
+});
+
 function renderProtocol(){
+  renderRitual();
   const list = document.getElementById("protocol-list");
   list.innerHTML = "";
   PROTOCOL.forEach((p, i)=>{
