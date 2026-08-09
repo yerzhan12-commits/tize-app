@@ -65,6 +65,24 @@
   }
   #start-btn:active{opacity:.85;}
 
+  /* ---------- Access gate ---------- */
+  #screen-gate{padding:32px 24px; justify-content:center; align-items:center; text-align:center; min-height:100vh;}
+  .gate-box{width:100%;}
+  .gate-logo{font-size:40px; font-weight:800; letter-spacing:2px; color:var(--accent); margin-bottom:6px;}
+  .gate-logo-sub{color:var(--muted); font-size:13px; margin-bottom:22px;}
+  .gate-box p{font-size:14px; color:#cfccc8; margin:0 0 20px; line-height:1.5;}
+  .gate-input{
+    width:100%; padding:14px; border-radius:12px; border:1px solid var(--line); background:var(--card);
+    color:var(--text); font-size:16px; text-align:center; letter-spacing:1px; margin-bottom:10px; font-family:inherit;
+  }
+  .gate-input:focus{outline:none; border-color:var(--accent);}
+  .gate-error{color:#e0745c; font-size:12.5px; margin-bottom:10px;}
+  #gate-submit{
+    width:100%; padding:14px; font-size:15px; font-weight:700; background:var(--accent); color:#fff;
+    border:none; border-radius:12px; cursor:pointer;
+  }
+  .buyer-watermark{font-size:10.5px; color:var(--muted);}
+
   /* ---------- Top bar ---------- */
   .topbar{
     position:sticky; top:0; z-index:5;
@@ -327,8 +345,21 @@
 <body>
 <div id="app">
 
+  <!-- ===================== ACCESS GATE ===================== -->
+  <div class="screen active" id="screen-gate">
+    <div class="gate-box">
+      <div class="gate-logo">ТІЗЕ</div>
+      <div class="gate-logo-sub">персональный доступ</div>
+      <p>Введи код доступа, который получил при покупке.</p>
+      <input type="text" id="gate-code" class="gate-input" placeholder="Код доступа" autocapitalize="characters" autocomplete="off">
+      <div id="gate-error" class="gate-error" style="display:none;">Код не найден. Проверь правильность ввода.</div>
+      <button id="gate-submit">Войти →</button>
+    </div>
+  </div>
+
   <!-- ===================== WELCOME ===================== -->
-  <div class="screen active" id="screen-welcome">
+  <div class="screen" id="screen-welcome">
+    <div class="buyer-watermark" style="margin-bottom:6px;"></div>
     <div class="logo">ТІЗЕ</div>
     <div class="logo-sub">каз. «колено»</div>
     <p>Продвинутая 4-недельная программа для укрепления и восстановления коленных суставов. Нагрузка нарастает от базовых паттернов движения до сложных эксцентрических элементов и координации.</p>
@@ -347,6 +378,7 @@
       <h1>Программа ТІЗЕ</h1>
       <button class="help-btn" id="help-btn" title="Как пользоваться">❓</button>
     </div>
+    <div class="buyer-watermark" style="padding:6px 18px 0;"></div>
     <div class="reminder-banner" id="reminder-banner" style="display:none;">
       <span id="reminder-text"></span>
       <button id="reminder-dismiss">✕</button>
@@ -1621,14 +1653,54 @@ function finishTimer(){
 /* =========================================================
    INIT
 ========================================================= */
-(function init(){
+/* =========================================================
+   ACCESS GATE
+========================================================= */
+const ACCESS_CODES = {
+  "TIZE-DEMO": "Демо доступ"
+  // Добавляй сюда новые коды при продаже: "КОД": "Имя покупателя"
+};
+const ACCESS_KEY = "tize_access_v1";
+
+function unlockApp(name){
+  document.querySelectorAll(".buyer-watermark").forEach(el=> el.textContent = "👤 "+name);
   if(state.started){
     document.getElementById("bottom-nav").style.display = "flex";
     renderProgram();
     showScreen("screen-program");
     setTab("program");
+  } else {
+    showScreen("screen-welcome");
   }
-})();
+}
+
+function checkAccess(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(ACCESS_KEY) || "null"); }catch(e){}
+  if(saved && ACCESS_CODES[saved.code] && ACCESS_CODES[saved.code] === saved.name){
+    unlockApp(saved.name);
+  } else {
+    showScreen("screen-gate");
+  }
+}
+
+document.getElementById("gate-submit").addEventListener("click", ()=>{
+  const raw = document.getElementById("gate-code").value.trim().toUpperCase();
+  const name = ACCESS_CODES[raw];
+  const errEl = document.getElementById("gate-error");
+  if(name){
+    localStorage.setItem(ACCESS_KEY, JSON.stringify({code:raw, name}));
+    errEl.style.display = "none";
+    unlockApp(name);
+  } else {
+    errEl.style.display = "block";
+  }
+});
+document.getElementById("gate-code").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter") document.getElementById("gate-submit").click();
+});
+
+checkAccess();
 
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
