@@ -1664,14 +1664,7 @@ const ACCESS_KEY = "tize_access_v1";
 
 function unlockApp(name){
   document.querySelectorAll(".buyer-watermark").forEach(el=> el.textContent = "👤 "+name);
-  if(state.started){
-    document.getElementById("bottom-nav").style.display = "flex";
-    renderProgram();
-    showScreen("screen-program");
-    setTab("program");
-  } else {
-    showScreen("screen-welcome");
-  }
+  showScreen("screen-welcome");
 }
 
 function checkAccess(){
