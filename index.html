@@ -1669,13 +1669,8 @@ function unlockApp(name){
 }
 
 function checkAccess(){
-  let saved = null;
-  try{ saved = JSON.parse(localStorage.getItem(ACCESS_KEY) || "null"); }catch(e){}
-  if(saved && ACCESS_CODES[saved.code] && ACCESS_CODES[saved.code] === saved.name){
-    unlockApp(saved.name);
-  } else {
-    showScreen("screen-gate");
-  }
+  // Гейт временно отключён по просьбе Ержана — раньше не пускал, разбираемся отдельно.
+  unlockApp("Ержан");
 }
 
 document.getElementById("gate-submit").addEventListener("click", ()=>{
