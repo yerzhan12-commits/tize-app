@@ -1656,39 +1656,68 @@ function finishTimer(){
 /* =========================================================
    ACCESS GATE
 ========================================================= */
-const ACCESS_CODES = {
-  "TIZE-DEMO": "Демо доступ",
-  "TIZE-OWNER": "Ержан",
-  "TIZE-HTXEFP": "Шер"
-  // Добавляй сюда новые коды при продаже: "КОД": "Имя покупателя"
-};
 const ACCESS_KEY = "tize_access_v1";
+const AUTH_ENDPOINT = "https://tize-auth.tize-yerzhan.workers.dev/verify";
 
 function unlockApp(name){
   document.querySelectorAll(".buyer-watermark").forEach(el=> el.textContent = "👤 "+name);
   showScreen("screen-welcome");
 }
 
-function checkAccess(){
+async function verifyCode(code, token){
+  const res = await fetch(AUTH_ENDPOINT, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({code, token: token || null})
+  });
+  return res.json();
+}
+
+async function checkAccess(){
   let saved = null;
   try{ saved = JSON.parse(localStorage.getItem(ACCESS_KEY) || "null"); }catch(e){}
-  if(saved && ACCESS_CODES[saved.code] && ACCESS_CODES[saved.code] === saved.name){
+  if(!saved){ showScreen("screen-gate"); return; }
+  try{
+    const data = await verifyCode(saved.code, saved.token);
+    if(data.ok){
+      if(data.token && data.token !== saved.token){
+        localStorage.setItem(ACCESS_KEY, JSON.stringify({code:saved.code, name:data.name, token:data.token}));
+      }
+      unlockApp(data.name);
+    } else {
+      localStorage.removeItem(ACCESS_KEY);
+      showScreen("screen-gate");
+    }
+  } catch(e){
+    // офлайн — доверяем локально сохранённому доступу, чтобы приложение работало без интернета
     unlockApp(saved.name);
-  } else {
-    showScreen("screen-gate");
   }
 }
 
-document.getElementById("gate-submit").addEventListener("click", ()=>{
+document.getElementById("gate-submit").addEventListener("click", async ()=>{
   const raw = document.getElementById("gate-code").value.trim().toUpperCase();
-  const name = ACCESS_CODES[raw];
   const errEl = document.getElementById("gate-error");
-  if(name){
-    localStorage.setItem(ACCESS_KEY, JSON.stringify({code:raw, name}));
-    errEl.style.display = "none";
-    unlockApp(name);
-  } else {
+  const btn = document.getElementById("gate-submit");
+  if(!raw) return;
+  btn.disabled = true;
+  try{
+    const data = await verifyCode(raw, null);
+    if(data.ok){
+      localStorage.setItem(ACCESS_KEY, JSON.stringify({code:raw, name:data.name, token:data.token}));
+      errEl.style.display = "none";
+      unlockApp(data.name);
+    } else if(data.error === "used"){
+      errEl.textContent = "Этот код уже активирован на другом устройстве.";
+      errEl.style.display = "block";
+    } else {
+      errEl.textContent = "Код не найден. Проверь правильность ввода.";
+      errEl.style.display = "block";
+    }
+  } catch(e){
+    errEl.textContent = "Нет соединения с интернетом. Попробуй ещё раз.";
     errEl.style.display = "block";
+  } finally {
+    btn.disabled = false;
   }
 });
 document.getElementById("gate-code").addEventListener("keydown", (e)=>{
