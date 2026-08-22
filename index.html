@@ -64,6 +64,12 @@
     background:var(--accent); color:#fff; border:none; border-radius:14px; cursor:pointer;
   }
   #start-btn:active{opacity:.85;}
+  #screen-welcome .welcome-warn{
+    margin:18px 0 0; padding:14px 16px; background:linear-gradient(135deg,#2a1a10,#201212);
+    border:1px solid var(--accent-dim); border-radius:14px; text-align:left;
+  }
+  #screen-welcome .welcome-warn-item{font-size:12.5px; color:#f0d9c9; line-height:1.5;}
+  #screen-welcome .welcome-warn-item + .welcome-warn-item{margin-top:8px;}
 
   /* ---------- Access gate ---------- */
   #screen-gate{padding:32px 24px; justify-content:center; align-items:center; text-align:center; min-height:100vh;}
@@ -252,17 +258,11 @@
     font-size:12.5px; color:#cfccc8; background:var(--bg2); border-radius:10px; padding:10px 12px;
     margin-bottom:12px; line-height:1.4; text-align:center;
   }
-  .ritual-checks{display:flex; flex-direction:column; gap:8px;}
-  .ritual-check-row{
-    display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--card2);
-    border-radius:10px; cursor:pointer; font-size:13px;
+  .ritual-start-btn{
+    width:100%; padding:13px; border-radius:10px; border:none; background:var(--accent); color:#fff;
+    font-size:14px; font-weight:700; cursor:pointer;
   }
-  .ritual-check-row.checked{background:#152018; color:#b9d9c4;}
-  .ritual-check-box{
-    width:20px; height:20px; border-radius:6px; border:2px solid var(--muted); display:flex;
-    align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0;
-  }
-  .ritual-check-row.checked .ritual-check-box{background:var(--good); border-color:var(--good); color:#fff;}
+  .ritual-start-btn:disabled{background:var(--good); opacity:1; cursor:default;}
   .ritual-timer{
     margin-top:14px; padding:14px; background:linear-gradient(135deg,#2a1a10,#1c1c1f);
     border:1px solid var(--accent-dim); border-radius:12px; text-align:center;
@@ -369,6 +369,10 @@
       <div class="phase-row"><div class="phase-num">НЕДЕЛЯ 3</div><div class="phase-txt"><b>ПРОДВИНУТЫЙ</b> — выпад на платформе, латеральные приземления, сисси-присед</div></div>
       <div class="phase-row"><div class="phase-num">НЕДЕЛЯ 4</div><div class="phase-txt"><b>ПИК</b> — максимальная сложность, полный контроль движения</div></div>
     </div>
+    <div class="welcome-warn">
+      <div class="welcome-warn-item">⚠️ Программа ТІЗЕ не является медицинским лечением. При наличии травм или хронических заболеваний суставов проконсультируйся с врачом перед началом.</div>
+      <div class="welcome-warn-item">🦵 Если колено воспалено или болит — не выполняй прыжковые упражнения.</div>
+    </div>
     <button id="start-btn">Начать программу →</button>
   </div>
 
@@ -442,7 +446,7 @@
         <button class="ritual-icon-btn" data-key="creatine">⚡<span>Креатин</span></button>
       </div>
       <div class="ritual-instruction">Смешай коллаген + соль + креатин в 500 мл воды и выпей</div>
-      <div class="ritual-checks" id="ritual-checks"></div>
+      <button class="ritual-start-btn" id="ritual-start-btn">Начал ритуал</button>
       <div class="ritual-timer" id="ritual-timer" style="display:none;">
         <div class="ritual-timer-label">⏳ Осталось до тренировки</div>
         <div class="ritual-timer-display" id="ritual-timer-display">45:00</div>
@@ -999,7 +1003,7 @@ function saveState(){
 if(!state.notes) state.notes = {};
 if(!state.completedAt) state.completedAt = {};
 if(state.reminderDismissedDate === undefined) state.reminderDismissedDate = null;
-if(!state.protocol) state.protocol = {date:null, collagen:false, salt:false, creatine:false, startedAt:null};
+if(!state.protocol) state.protocol = {date:null, startedAt:null};
 if(!state.protocolLog) state.protocolLog = [];
 
 function isChecked(dayIdx, exIdx){
@@ -1300,7 +1304,7 @@ const RITUAL_DURATION_MS = 45*60*1000;
 function ensureProtocolState(){
   const today = new Date().toDateString();
   if(state.protocol.date !== today){
-    state.protocol = {date:today, collagen:false, salt:false, creatine:false, startedAt:null};
+    state.protocol = {date:today, startedAt:null};
     saveState();
   }
 }
@@ -1309,32 +1313,14 @@ function renderRitual(){
   ensureProtocolState();
   const p = state.protocol;
 
-  const checksEl = document.getElementById("ritual-checks");
-  const items = [
-    {key:"collagen", label:"Коллаген выпит"},
-    {key:"salt", label:"Соль добавлена"},
-    {key:"creatine", label:"Креатин принят"}
-  ];
-  checksEl.innerHTML = "";
-  items.forEach(it=>{
-    const row = document.createElement("div");
-    row.className = "ritual-check-row" + (p[it.key] ? " checked" : "");
-    row.innerHTML = '<span class="ritual-check-box">'+(p[it.key]?"✓":"")+'</span><span>'+it.label+'</span>';
-    row.addEventListener("click", ()=>{
-      p[it.key] = !p[it.key];
-      if(p.collagen && p.salt && p.creatine){
-        if(!p.startedAt){
-          p.startedAt = Date.now();
-          state.protocolLog.push(p.startedAt);
-        }
-      } else {
-        p.startedAt = null;
-      }
-      saveState();
-      renderRitual();
-    });
-    checksEl.appendChild(row);
-  });
+  const startBtn = document.getElementById("ritual-start-btn");
+  if(p.startedAt){
+    startBtn.textContent = "✓ Ритуал начат";
+    startBtn.disabled = true;
+  } else {
+    startBtn.textContent = "Начал ритуал";
+    startBtn.disabled = false;
+  }
 
   const timerBox = document.getElementById("ritual-timer");
   clearInterval(ritualInterval);
@@ -1373,6 +1359,15 @@ document.querySelectorAll(".ritual-icon-btn").forEach(btn=>{
     document.getElementById("ritual-info-text").textContent = info.text;
     document.getElementById("ritual-info-modal").classList.add("active");
   });
+});
+
+document.getElementById("ritual-start-btn").addEventListener("click", ()=>{
+  const p = state.protocol;
+  if(p.startedAt) return;
+  p.startedAt = Date.now();
+  state.protocolLog.push(p.startedAt);
+  saveState();
+  renderRitual();
 });
 
 document.getElementById("ritual-remind-btn").addEventListener("click", ()=>{
