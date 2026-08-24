@@ -600,7 +600,7 @@ function ytId(input){
 function videoAreaHtml(video){
   const id = ytId(video);
   if(id){
-    return '<div class="video-embed"><iframe src="https://www.youtube-nocookie.com/embed/'+id+'" title="Видео" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>';
+    return '<div class="video-embed"><iframe src="https://www.youtube-nocookie.com/embed/'+id+'?modestbranding=1&rel=0" title="Видео" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
   }
   return '<button class="video-btn" disabled>▶ Видео скоро появится</button>';
 }
