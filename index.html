@@ -280,6 +280,30 @@
   .protocol-mix p{margin:0 0 8px; font-size:12.5px; line-height:1.5; color:#cfccc8;}
   .protocol-mix p:last-child{margin-bottom:0;}
   .protocol-mix b{color:var(--text);}
+
+  .formula-toggle{
+    display:flex; align-items:center; justify-content:space-between; width:calc(100% - 36px);
+    margin:0 18px 12px; background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:14px 16px; color:var(--text); font-size:13.5px; font-weight:700; cursor:pointer; text-align:left;
+  }
+  .formula-arrow{color:var(--accent); transition:transform .2s; flex-shrink:0; margin-left:10px;}
+  .formula-arrow.open{transform:rotate(180deg);}
+  .formula-body{padding:0 18px;}
+  .formula-intro{font-size:12px; color:var(--muted); line-height:1.5; margin:0 0 14px;}
+  .formula-card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px;}
+  .formula-card h5{margin:0 0 8px; font-size:13.5px; color:var(--accent);}
+  .formula-row{display:flex; justify-content:space-between; gap:10px; font-size:12px; padding:5px 0; border-bottom:1px solid var(--line);}
+  .formula-row:last-of-type{border-bottom:none;}
+  .formula-row span:first-child{color:var(--muted);}
+  .formula-row span:last-child{font-weight:600; color:var(--text); text-align:right;}
+  .formula-why{font-size:12px; color:#cfccc8; line-height:1.5; margin:8px 0 0;}
+  .formula-cheat{background:var(--card2); border:1px solid var(--accent-dim); border-radius:12px; padding:14px; margin:4px 0 14px;}
+  .formula-cheat h5{margin:0 0 6px; font-size:13.5px; color:var(--accent);}
+  .formula-cheat .formula-row span:last-child{color:var(--accent);}
+  .formula-comment{font-size:12.5px; color:#cfccc8; line-height:1.6; margin-bottom:14px;}
+  .formula-comment ul{margin:8px 0 0; padding-left:18px;}
+  .formula-comment li{margin-bottom:4px;}
+  .formula-disclaimer{font-size:11.5px; line-height:1.5; color:var(--muted); margin:0 0 16px;}
   .protocol-disclaimer{
     margin:0 18px 20px; padding:12px 14px; font-size:11.5px; line-height:1.5; color:var(--muted);
     border-top:1px solid var(--line); padding-top:14px;
@@ -469,6 +493,77 @@
       <p><b>За 45 минут до тренировки</b>, на пустой желудок — в 500 мл воды: коллаген (10-15 г) + морская пищевая соль (0.5-1 г) + креатин (5 г). Размешай и выпей — три компонента усиливают друг друга.</p>
       <p><b>В дни отдыха:</b> только коллаген, утром натощак на 500 мл воды.</p>
     </div>
+
+    <button class="formula-toggle" id="formula-toggle">
+      <span>🧪 Идеальная формула коллагенового комплекса</span>
+      <span class="formula-arrow" id="formula-arrow">▾</span>
+    </button>
+    <div class="formula-body" id="formula-body" style="display:none;">
+      <p class="formula-intro">Ориентир при выборе добавок — не назначение и не замена консультации врача, а чек-лист «на что смотреть на этикетке».</p>
+
+      <div class="formula-card">
+        <h5>🦴 Коллаген — главный строительный материал</h5>
+        <div class="formula-row"><span>Тип коллагена</span><span>I + II → I + II + III</span></div>
+        <div class="formula-row"><span>Дозировка</span><span>5 г → 9–10 г</span></div>
+        <div class="formula-row"><span>Форма</span><span>Гидролизованный (пептиды)</span></div>
+        <p class="formula-why">Коллаген I типа — для связок и сухожилий, II типа — для хрящей. Оптимальная доза для восстановления — 10 г в день; меньше 5 г — это уже профилактика, а не восстановление.</p>
+      </div>
+
+      <div class="formula-card">
+        <h5>🦵 Хрящевая поддержка — глюкозамин + хондроитин</h5>
+        <div class="formula-row"><span>Глюкозамин сульфат</span><span>500 мг → 1500 мг</span></div>
+        <div class="formula-row"><span>Хондроитин сульфат</span><span>400 мг → 1200 мг</span></div>
+        <p class="formula-why">Глюкозамин стимулирует выработку синовиальной жидкости, хондроитин удерживает влагу в хряще. Вместе замедляют разрушение хряща и прогрессирование артроза.</p>
+      </div>
+
+      <div class="formula-card">
+        <h5>🔥 Противовоспалительный комплекс — МСМ + босвеллия</h5>
+        <div class="formula-row"><span>МСМ</span><span>500 мг → 1000–1500 мг</span></div>
+        <div class="formula-row"><span>Босвеллия</span><span>100 мг → 200–300 мг</span></div>
+        <p class="formula-why">МСМ — источник серы, снимает боль и укрепляет соединительную ткань. Босвеллия — природный противовоспалительный компонент, мягкий аналог НПВП без вреда для желудка. Особенно важно при хроническом воспалении (гонартроз, синовит).</p>
+      </div>
+
+      <div class="formula-card">
+        <h5>💧 «Смазка» сустава — гиалуроновая кислота</h5>
+        <div class="formula-row"><span>Гиалуроновая кислота</span><span>10 мг → 20–40 мг</span></div>
+        <p class="formula-why">Естественная «смазка» сустава — улучшает скольжение, уменьшает трение, питает хрящ. Особенно важна при артрозе, когда собственная синовиальная жидкость становится менее вязкой.</p>
+      </div>
+
+      <div class="formula-card">
+        <h5>🍊 Усвоение и поддержка — витамины и минералы</h5>
+        <div class="formula-row"><span>Витамин C</span><span>60 мг → 100–200 мг</span></div>
+        <div class="formula-row"><span>Витамин D3</span><span>400 МЕ → 1000–2000 МЕ</span></div>
+        <div class="formula-row"><span>Магний / Кальций</span><span>по необходимости</span></div>
+        <p class="formula-why">Витамин C необходим для синтеза коллагена — без него коллаген не усваивается. Витамин D3 регулирует обмен кальция, поддерживает костную ткань и снижает воспаление.</p>
+      </div>
+
+      <div class="formula-cheat">
+        <h5>📋 Краткая шпаргалка (оптимально)</h5>
+        <div class="formula-row"><span>Коллаген (I+II)</span><span>9–10 г</span></div>
+        <div class="formula-row"><span>Глюкозамин</span><span>1500 мг</span></div>
+        <div class="formula-row"><span>Хондроитин</span><span>1200 мг</span></div>
+        <div class="formula-row"><span>МСМ</span><span>1000–1500 мг</span></div>
+        <div class="formula-row"><span>Босвеллия</span><span>200–300 мг</span></div>
+        <div class="formula-row"><span>Гиалуроновая кислота</span><span>20–40 мг</span></div>
+        <div class="formula-row"><span>Витамин C</span><span>100–200 мг</span></div>
+        <div class="formula-row"><span>Витамин D3</span><span>1000–2000 МЕ</span></div>
+      </div>
+
+      <div class="formula-comment">
+        Идеальный комплекс для восстановления колена при гонартрозе и повреждениях менисков должен содержать:
+        <ul>
+          <li>Коллаген — для связок и сухожилий.</li>
+          <li>Глюкозамин + хондроитин — для хрящей.</li>
+          <li>МСМ + босвеллию — для снятия боли и воспаления.</li>
+          <li>Гиалуронку — для смазки сустава.</li>
+          <li>Витамин C + D — для усвоения и поддержки.</li>
+        </ul>
+        Это и есть «формула ТІЗЕ» — ориентир при выборе добавок, а не инструкция по приёму.
+      </div>
+
+      <div class="formula-disclaimer">⚠️ Это справочный ориентир для выбора добавок, а не медицинское назначение. Перед приёмом БАДов проконсультируйся с врачом, особенно при хронических заболеваниях или во время лечения.</div>
+    </div>
+
     <div class="protocol-disclaimer">⚠️ Программа ТІЗЕ не является медицинским лечением. При наличии травм или хронических заболеваний суставов проконсультируйся с врачом перед началом.</div>
   </div>
 
@@ -1400,6 +1495,14 @@ document.getElementById("ritual-start-btn").addEventListener("click", ()=>{
   state.protocolLog.push(p.startedAt);
   saveState();
   renderRitual();
+});
+
+document.getElementById("formula-toggle").addEventListener("click", ()=>{
+  const body = document.getElementById("formula-body");
+  const arrow = document.getElementById("formula-arrow");
+  const open = body.style.display !== "none";
+  body.style.display = open ? "none" : "block";
+  arrow.classList.toggle("open", !open);
 });
 
 document.getElementById("ritual-remind-btn").addEventListener("click", ()=>{
