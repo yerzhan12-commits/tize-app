@@ -76,6 +76,23 @@ async function handleAdminReset(body, env, cors) {
   return json({ ok: true }, 200, cors);
 }
 
+async function handleAdminList(body, env, cors) {
+  if (!env.ADMIN_KEY || body.adminKey !== env.ADMIN_KEY) {
+    return json({ ok: false, error: "forbidden" }, 403, cors);
+  }
+  const list = await env.CODES.list();
+  const codes = [];
+  for (const key of list.keys) {
+    const raw = await env.CODES.get(key.name);
+    if (!raw) continue;
+    try {
+      const entry = JSON.parse(raw);
+      codes.push({ code: key.name, name: entry.name, active: !!entry.token });
+    } catch (e) {}
+  }
+  return json({ ok: true, codes }, 200, cors);
+}
+
 export default {
   async fetch(request, env) {
     const cors = corsHeaders();
@@ -97,6 +114,7 @@ export default {
     if (pathname === "/verify") return handleVerify(body, env, cors);
     if (pathname === "/admin/add") return handleAdminAdd(body, env, cors);
     if (pathname === "/admin/reset") return handleAdminReset(body, env, cors);
+    if (pathname === "/admin/list") return handleAdminList(body, env, cors);
     return json({ ok: false, error: "not_found" }, 404, cors);
   }
 };
