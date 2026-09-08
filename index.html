@@ -162,6 +162,16 @@
 
   .week-label{padding:6px 18px 2px; font-size:12px; color:var(--muted); letter-spacing:.5px;}
 
+  /* ---------- Test-transition card ---------- */
+  .test-card{margin:14px 18px 20px; padding:16px; background:var(--card); border:1px solid var(--accent-dim); border-radius:14px;}
+  .test-card .test-label{font-size:11px; font-weight:700; letter-spacing:.5px; color:var(--accent); margin-bottom:6px;}
+  .test-card .test-name{font-size:15px; font-weight:800; margin-bottom:8px;}
+  .test-card .test-row{display:flex; gap:8px; font-size:12.5px; line-height:1.5; color:#cfccc8; margin-bottom:6px;}
+  .test-card .test-row:last-child{margin-bottom:0;}
+  .test-card .test-row b{color:var(--text); flex:none; width:78px;}
+  .test-card .test-pass{color:#b9d9c4;}
+  .test-card .test-fail{color:var(--muted);}
+
   /* ---------- Day detail ---------- */
   .day-nav{
     display:flex; align-items:center; justify-content:space-between; padding:14px 18px 6px;
@@ -422,6 +432,7 @@
     <div class="week-tabs" id="week-tabs"></div>
     <div class="week-label" id="week-label"></div>
     <div class="day-grid" id="day-grid"></div>
+    <div class="test-card" id="test-card"></div>
   </div>
 
   <!-- ===================== DAY DETAIL ===================== -->
@@ -621,6 +632,8 @@
       <p>Если у упражнения есть кнопка «⏱ Таймер» — она сама отсчитывает подходы и подсказывает звуком, когда менять фазу или сделать следующий подход.</p>
       <div class="label">ЗАМЕТКИ</div>
       <p>Внизу каждого дня можно оставить заметку — например, как сегодня повело себя колено.</p>
+      <div class="label">ТЕСТ НА ПЕРЕХОД</div>
+      <p>Под картой дней каждой недели есть тест — конкретное упражнение с чётким критерием «прошёл/не прошёл». Переходи на следующую неделю по этому тесту, а не по календарю: не прошёл — просто повтори текущую неделю ещё раз.</p>
       <div class="label">СТАТИСТИКА</div>
       <p>Показывает прогресс по неделям и карту всех дней программы — нажми на день в карте, чтобы сразу перейти к нему.</p>
       <div class="label">ОФЛАЙН</div>
@@ -1081,6 +1094,37 @@ const DAYS = [
 ]}
 ];
 
+/* =========================================================
+   DATA: week-transition tests
+   Переход к следующей неделе — по тесту, а не по календарю.
+========================================================= */
+const TESTS = {
+  1:{
+    name:"Тест приседа на одной ноге",
+    how:"Неглубокий присед на менее здоровой ноге у опоры, 5 повторений.",
+    pass:"Колено не заваливается внутрь, нет острой боли (терпимо 2–3 из 10), стопа не отрывается от пола.",
+    next:"Неделя 2"
+  },
+  2:{
+    name:"Тест стойки на одной ноге",
+    how:"Стойка на менее здоровой ноге, взгляд в одну точку, 30 секунд.",
+    pass:"Простояли 30 секунд без потери равновесия и без боли в колене.",
+    next:"Неделя 3"
+  },
+  3:{
+    name:"Тест мягкого приземления",
+    how:"5 приземлений подряд с платформы 20–30 см на менее здоровую ногу.",
+    pass:"Каждое приземление тихое (без «хлопка» стопой), колено гасит удар мягко, без боли.",
+    next:"Неделя 4"
+  },
+  4:{
+    name:"Прыжковый тест (hop test)",
+    how:"Прыжок в длину на одной ноге с места, менее здоровой ногой, приземление на ту же ногу.",
+    pass:"Дистанция прыжка не менее 90% от здоровой ноги, приземление устойчивое, без боли.",
+    next:"Программа пройдена"
+  }
+};
+
 const PROTOCOL = [
   {title:"Коллаген — основа суставов", dose:"10-15 г в день, за 45 мин до тренировки", text:"Хрящ, связки и сухожилия на 70% состоят из коллагена — с возрастом и нагрузками его выработка снижается. Выбирай Коллаген Тип 2 с хондропротекторами (хондроитин + глюкозамин) и обязательно с витамином C — он усиливает усвоение в 2-3 раза."},
   {title:"Морская пищевая соль — электролиты", dose:"0.5-1 г на 500 мл воды", text:"Натрий и микроэлементы поддерживают гидратацию суставной ткани и нервно-мышечную проводимость, снижая риск судорог при долгих статических удержаниях."},
@@ -1261,6 +1305,14 @@ function renderProgram(){
     });
     grid.appendChild(cell);
   });
+
+  const t = TESTS[currentWeek];
+  document.getElementById("test-card").innerHTML =
+    '<div class="test-label">ТЕСТ НА ПЕРЕХОД → '+t.next.toUpperCase()+'</div>'+
+    '<div class="test-name">'+t.name+'</div>'+
+    '<div class="test-row"><b>Как делать</b><span>'+t.how+'</span></div>'+
+    '<div class="test-row"><b class="test-pass">Прошёл, если</b><span class="test-pass">'+t.pass+'</span></div>'+
+    '<div class="test-row"><b class="test-fail">Не прошёл?</b><span class="test-fail">Не страшно — повторите эту неделю ещё раз и проверьте тест снова, это не откат назад.</span></div>';
 }
 
 /* =========================================================
